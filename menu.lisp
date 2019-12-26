@@ -5,8 +5,7 @@
                 #:get-status-item
                 #:get-menu
                 #:get-title
-                #:get-status-bar)
-  (:import-from #:barista/utils
+                #:get-status-bar
                 #:objc-string)
   (:import-from #:barista/vars
                 #:*plugin*)
@@ -26,8 +25,7 @@
                                               #$NSVariableStatusItemLength)))
     (#/retain status-item)
     (#/setTitle: status-item
-                 (make-instance 'gui:ns-lisp-string
-                                :string (get-title item)))
+                 (objc-string (get-title item)))
     ;; (let ((button (objc:objc-message-send status-item "button")))
     ;;   (#/setToolTip: button #@"Hello world")
     ;;   (#/setTarget: button menu)
@@ -71,7 +69,7 @@
     (#/release (get-status-item item))))
 
 
-(defun %add-menu-item (menu title &key callback)
+(defun %add-menu-item (menu title &key callback submenu)
   (let ((item (#/alloc barista/classes::menu-item)))
     (#/initWithTitle:action:keyEquivalent: item
                                            (objc-string title)
@@ -86,25 +84,35 @@
                  (let ((*plugin* plugin))
                    (apply callback args))))
              *plugin*)))
+    
+    (when submenu
+      (let ((submenu (make-menu submenu)))
+        (setf (#/submenu item)
+              submenu)))
+    
     (#/setTarget: item item)
     (#/addItem: menu item)
     (values item)))
 
 
-(defun %make-menu-item-call (data)
-  (destructuring-bind (title &key callback)
+(defun %make-menu-item-call (menu-var data)
+  (destructuring-bind (title &key callback submenu)
       (uiop:ensure-list data)
-    `(%add-menu-item menu ,title :callback ,callback)))
+    `(%add-menu-item ,menu-var ,title
+                     :callback ,callback
+                     :submenu ',submenu)))
 
 
 (defmacro defmenu (name (&rest items))
-  (let ((func-name (intern (format nil "MAKE-~A-MENU" (string-upcase name))))
-        (item-calls (mapcar #'%make-menu-item-call items)))
+  (let* ((func-name (intern (format nil "MAKE-~A-MENU" (string-upcase name))))
+         (menu-var (gensym "MENU"))
+         (item-calls (loop for item in items
+                           collect (%make-menu-item-call menu-var item))))
     `(progn
        (defun ,func-name ()
-         (let ((menu (#/new ns:ns-menu)))
+         (let ((,menu-var (#/new ns:ns-menu)))
            ,@item-calls
-           (values menu)))
+           (values ,menu-var)))
        (setf (getf *menu-constructors* ',name)
              #',func-name))))
 

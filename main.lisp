@@ -9,3 +9,8 @@
 
 (defun load-plugins ()
   )
+
+
+(defun main ()
+  (format t "ARGS: ~A~%"
+          (uiop:command-line-arguments)))

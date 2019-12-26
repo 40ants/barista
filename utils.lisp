@@ -2,18 +2,15 @@
   (:use #:cl)
   (:import-from #:fmt
                 #:fmt)
+  (:import-from #:local-time-duration
+                #:duration-as)
   (:export
-   #:objc-string
    #:format-duration))
 (in-package barista/utils)
 
 
-(defun objc-string (value)
-  (make-instance 'gui:ns-lisp-string :string value))
-
-
 (defun format-duration (duration &optional stream)
-  (let* ((seconds (local-time-duration:duration-as duration :sec))
+  (let* ((seconds (duration-as duration :sec))
          (minutes (floor (/ seconds 60)))
          (hours (floor (/ seconds (* 60 60))))
          (days (floor (/ seconds (* 60 60 24))))

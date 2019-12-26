@@ -1,6 +1,7 @@
 (defpackage #:barista/plugin
   (:use #:cl)
   (:import-from #:log4cl)
+  (:import-from #:barista/utils)
   (:import-from #:barista/menu
                 #:make-menu
                 #:hide)
@@ -18,13 +19,19 @@
    #:get-plugin-instance
    #:is-plugin-running
    #:get-title
-   #:replace-menu))
+   #:replace-menu
+   #:get-available-plugins))
 (in-package barista/plugin)
 
 
 (defvar *running-plugins* nil
   "A plist of running plugins where key is a symbol of the class name
    and value is an instance of this class.")
+
+
+(defvar *available-plugins* nil
+  "A list of available plugins. Each item is a symbol which can be used
+   as argument to a `start-plugin' function.")
 
 
 (defclass base-plugin ()
@@ -82,6 +89,10 @@
           plugin)))
 
 
+(defun get-available-plugins ()
+  *available-plugins*)
+
+
 (defun start-plugin (class-name)
   (when (is-plugin-running class-name)
     (log:info "Stopping a plugin instance" class-name)
@@ -127,7 +138,7 @@
 (defun make-worker-form (period code)
   (multiple-value-bind (delay description)
       (get-delay-from period)
-    `(make-thread ,
+    `(make-thread
       (lambda ()
         (loop do
           (ignore-errors
@@ -167,6 +178,8 @@
     `(progn
        (defclass ,name (base-plugin)
          (,@slots))
+
+       (pushnew ',name *available-plugins*)
 
        (defmethod initialize-plugin :after ((plugin ,name))
          ;; Here we need to bind *plugin* variable to make

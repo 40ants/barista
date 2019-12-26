@@ -17,21 +17,23 @@
   (:import-from #:fmt
                 #:fmt)
   (:import-from #:barista/notify
-                #:notify))
+                #:notify)
+  (:import-from #:f-underscore
+                #:f_%))
 (in-package barista-plugins/pomodoro)
 
 
-(defparameter *stopped-symbol* "❌")
-(defparameter *started-symbol* "✅")
+(defparameter *stopped-symbol* "🍅")
 (defparameter *in-progress-symbol* "♽")
-(defparameter *interval* (* 60 15))
+(defvar *last-used-interval* 25)
 
 
-(defun start (self)
-  (declare (ignorable self))
+(defun start (minutes)
+  (setf *last-used-interval* minutes)
+  
   (setf (get-state *plugin*) :started
         (get-count-to *plugin*) (adjust-timestamp (now)
-                                  (offset :sec *interval*)))
+                                  (offset :sec (* minutes 60))))
   (update)
   (barista/plugin:replace-menu start stop)
   (notify "Pomodoro starting" :title "Pomodoro" :sound :hero))
@@ -60,9 +62,16 @@
            (stop *plugin*))))))
 
 
+(defmenu start-submenu
+    (("5 minutes" :callback (f_% (start 5)))
+     ("15 minutes" :callback (f_% (start 15)))
+     ("25 minutes" :callback (f_% (start 25)))))
+
+
 (defmenu start
     (("Start"
-      :callback 'start)))
+      :submenu start-submenu
+      :callback (f_% (start *last-used-interval*)))))
 
 
 (defmenu stop
