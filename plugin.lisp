@@ -20,7 +20,8 @@
    #:is-plugin-running
    #:get-title
    #:replace-menu
-   #:get-available-plugins))
+   #:get-available-plugins
+   #:get-menu))
 (in-package barista/plugin)
 
 
@@ -193,6 +194,17 @@
                                 :menu ,menu-form))
            (setf (get-threads plugin)
                  (list ,@workers-forms)))))))
+
+
+(defmethod get-menu ((self base-plugin))
+  (barista/classes:get-menu
+   (get-status-item *plugin*)))
+
+
+(defmethod (setf get-menu) (new-menu (self base-plugin))
+  (setf (barista/classes:get-menu
+         (get-status-item *plugin*))
+        new-menu))
 
 
 (defun %replace-menu (from to)

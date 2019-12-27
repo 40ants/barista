@@ -5,7 +5,8 @@
   (:import-from #:local-time-duration
                 #:duration-as)
   (:export
-   #:format-duration))
+   #:format-duration
+   #:open-url))
 (in-package barista/utils)
 
 
@@ -60,3 +61,8 @@
            (format-duration (second clause) destination))
   (:compile (destination clause)
             `(format-duration ,(second clause) ,destination)))
+
+
+(defun open-url (url)
+  (uiop:run-program (format nil "open ~A" url)))
+

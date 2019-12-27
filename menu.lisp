@@ -9,10 +9,14 @@
                 #:objc-string)
   (:import-from #:barista/vars
                 #:*plugin*)
+  (:import-from #:barista/utils
+                #:open-url)
   (:export
    #:defmenu
    #:hide
-   #:make-menu))
+   #:make-menu
+   #:build-menu
+   #:add-item))
 (in-package barista/menu)
 
 
@@ -69,12 +73,21 @@
     (#/release (get-status-item item))))
 
 
-(defun %add-menu-item (menu title &key callback submenu)
+(defun %add-menu-item (menu title &key callback submenu url)
   (let ((item (#/alloc barista/classes::menu-item)))
     (#/initWithTitle:action:keyEquivalent: item
                                            (objc-string title)
                                            (objc:@selector #/theCallback)
                                            #@"")
+    (when (and callback url)
+      (error "Callback and URL can't be specified simultaneously."))
+
+    (when url
+      (setf callback
+            (lambda (&rest rest)
+              (declare (ignorable rest))
+              (open-url url))))
+    
     (when callback
       (setf (get-callback item)
             ;; To restore a plugin binding, we need to catch it into a closure
@@ -96,11 +109,12 @@
 
 
 (defun %make-menu-item-call (menu-var data)
-  (destructuring-bind (title &key callback submenu)
+  (destructuring-bind (title &key callback submenu url)
       (uiop:ensure-list data)
     `(%add-menu-item ,menu-var ,title
                      :callback ,callback
-                     :submenu ',submenu)))
+                     :submenu ',submenu
+                     :url ,url)))
 
 
 (defmacro defmenu (name (&rest items))
@@ -115,6 +129,18 @@
            (values ,menu-var)))
        (setf (getf *menu-constructors* ',name)
              #',func-name))))
+
+
+(defmacro build-menu (&body body)
+  (let* ((menu-var (gensym "MENU")))
+    `(let ((,menu-var (#/new ns:ns-menu)))
+       (flet ((add-item (title &key callback submenu url)
+                (%add-menu-item ,menu-var title
+                                :callback callback
+                                :submenu submenu
+                                :url url)))
+         ,@body)
+       (values ,menu-var))))
 
 
 (defun make-menu (name)
