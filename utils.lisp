@@ -65,4 +65,3 @@
 
 (defun open-url (url)
   (uiop:run-program (format nil "open ~A" url)))
-
