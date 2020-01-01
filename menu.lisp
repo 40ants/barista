@@ -1,6 +1,7 @@
 (defpackage #:barista/menu
   (:use #:cl)
   (:import-from #:barista/classes
+                #:get-string-form-for-macro
                 #:get-callback
                 #:get-status-item
                 #:get-menu
@@ -74,11 +75,19 @@
 
 
 (defun %add-menu-item (menu title &key callback submenu url)
-  (let ((item (#/alloc barista/classes::menu-item)))
+  (let ((item (#/alloc barista/classes::menu-item))
+        (title (objc-string title)))
     (#/initWithTitle:action:keyEquivalent: item
-                                           (objc-string title)
+                                           title
                                            (objc:@selector #/theCallback)
                                            #@"")
+    ;; If title has a special color or font, then we have to
+    ;; put it into a separate attribute. Otherwise menu will not be displayed.
+    ;; Why, Apple!? Why?
+    (when (typep title ns:ns-attributed-string)
+      (setf (#/attributedTitle item)
+            title))
+    
     (when (and callback url)
       (error "Callback and URL can't be specified simultaneously."))
 
@@ -111,7 +120,8 @@
 (defun %make-menu-item-call (menu-var data)
   (destructuring-bind (title &key callback submenu url)
       (uiop:ensure-list data)
-    `(%add-menu-item ,menu-var ,title
+    `(%add-menu-item ,menu-var
+                     ,(get-string-form-for-macro title)
                      :callback ,callback
                      :submenu ',submenu
                      :url ,url)))
@@ -125,6 +135,7 @@
     `(progn
        (defun ,func-name ()
          (let ((,menu-var (#/new ns:ns-menu)))
+           (log:info "Creating menu" ',name)
            ,@item-calls
            (values ,menu-var)))
        (setf (getf *menu-constructors* ',name)

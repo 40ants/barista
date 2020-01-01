@@ -1,7 +1,10 @@
 (defpackage #:barista/plugin
   (:use #:cl)
   (:import-from #:log4cl)
-  (:import-from #:barista/utils)
+  (:import-from #:barista/utils
+                #:on-main-thread)
+  (:import-from #:barista/classes
+                #:get-string-form-for-macro)
   (:import-from #:barista/menu
                 #:make-menu
                 #:hide)
@@ -73,15 +76,17 @@
 
 (defgeneric stop-plugin (plugin)
   (:method ((plugin symbol))
-    (let ((obj (get-plugin-instance plugin)))
-      (when obj
-        (stop-plugin obj))))
+    (on-main-thread
+     (let ((obj (get-plugin-instance plugin)))
+       (when obj
+         (stop-plugin obj)))))
   (:method ((plugin base-plugin))
-    (stop-threads plugin)
-    (when (get-status-item plugin)
-      (hide (get-status-item plugin)))
-    (setf (getf *running-plugins* (class-name (class-of plugin)))
-          nil)))
+    (on-main-thread
+     (stop-threads plugin)
+     (when (get-status-item plugin)
+       (hide (get-status-item plugin)))
+     (setf (getf *running-plugins* (class-name (class-of plugin)))
+           nil))))
 
 
 (defgeneric initialize-plugin (plugin)
@@ -95,17 +100,19 @@
 
 
 (defun start-plugin (class-name)
-  (when (is-plugin-running class-name)
-    (log:info "Stopping a plugin instance" class-name)
-    (stop-plugin class-name))
+  (on-main-thread 
+   (when (is-plugin-running class-name)
+     (log:info "Stopping a plugin instance" class-name)
+     (stop-plugin class-name))
 
-  (log:info "Creating a plugin instance" class-name)
-  (let ((instance (make-instance class-name)))
-    (initialize-plugin instance)))
+   (log:info "Creating a plugin instance" class-name)
+   (let ((instance (make-instance class-name)))
+     (initialize-plugin instance))))
 
 
 (defun get-title-from (options)
-  (second (assoc :title options)))
+  (let ((title (second (assoc :title options))))
+    (get-string-form-for-macro title)))
 
 
 (defun get-menu-from (options)

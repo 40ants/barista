@@ -4,6 +4,8 @@
                 #:adjust-timestamp
                 #:now)
   (:import-from #:local-time-duration
+                #:duration<=
+                #:duration
                 #:duration-as
                 #:timestamp-difference)
   (:import-from #:barista/menu
@@ -26,6 +28,10 @@
 (defparameter *stopped-symbol* "🍅")
 (defparameter *in-progress-symbol* "♽")
 (defvar *last-used-interval* 25)
+
+(defparameter +critical-duration+
+  (make-instance 'duration :sec (* 3 60) )
+  "After this number of seconds, timer will become red.")
 
 
 (defun start (minutes)
@@ -54,8 +60,13 @@
                          (get-count-to *plugin*)
                          (now)))
             (seconds (duration-as difference :sec))
-            (new-title (fmt nil *in-progress-symbol* " "
-                            (:duration difference))))
+            (new-title (barista/classes:join-attributed-string
+                        *in-progress-symbol*
+                        " "
+                        (list (barista/utils:format-duration difference)
+                              :color (if (duration<= difference +critical-duration+)
+                                         :red
+                                         :GREEN4)))))
        (if (> seconds 0)
            (setf (get-title *plugin*)
                  new-title)
@@ -63,7 +74,7 @@
 
 
 (defmenu start-submenu
-    (("5 minutes" :callback (f_% (start 5)))
+    ((" 5 minutes" :callback (f_% (start 5)))
      ("15 minutes" :callback (f_% (start 15)))
      ("25 minutes" :callback (f_% (start 25)))))
 

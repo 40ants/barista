@@ -6,7 +6,8 @@
                 #:duration-as)
   (:export
    #:format-duration
-   #:open-url))
+   #:open-url
+   #:on-main-thread))
 (in-package barista/utils)
 
 
@@ -65,3 +66,9 @@
 
 (defun open-url (url)
   (uiop:run-program (format nil "open ~A" url)))
+
+
+(defmacro on-main-thread (&rest actions)
+  `(ccl::call-in-event-process
+    #'(lambda ()
+        ,@actions)))

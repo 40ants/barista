@@ -2,6 +2,11 @@
   (:use #:cl)
   (:import-from #:log4cl)
   (:import-from #:babel)
+  (:import-from #:cl-colors)
+  (:import-from #:alexandria)
+  (:import-from #:barista/vars
+                #:+supported-colors+
+                #:+default-font-size+)
   (:export
    #:get-menu
    #:get-status-item
@@ -9,7 +14,12 @@
    #:get-callback
    #:status-item
    #:get-title
-   #:objc-string))
+   #:objc-string
+   #:make-attributed-string
+   #:make-font
+   #:make-default-font
+   #:join-attributed-string
+   #:get-string-form-for-macro))
 (in-package barista/classes)
 
 ;; CCL does not allow to redefine this class
@@ -99,4 +109,108 @@
 
 
 (defun objc-string (text)
-  (make-instance 'ns-lisp-unicode-string :string text))
+  (etypecase text
+    (string (make-instance 'ns-lisp-unicode-string :string text))
+    (ns:ns-attributed-string text)
+    (ns:ns-string text)))
+
+
+;; Mutable dict
+
+(defun make-dict (&optional alist)
+  (flet ((string-to-objc (value)
+           (typecase value
+             (string (objc-string value))
+             (t value))))
+    (loop with dict = (make-instance 'ns:ns-mutable-dictionary)
+          for (key . value) in alist
+          do (setf (#/objectForKey: dict
+                                    (string-to-objc key))
+                   (string-to-objc value))
+          finally (return dict))))
+
+
+(defun keyword-to-color (color)
+  (check-type color keyword)
+  (when (member color +supported-colors+)
+    (symbol-value (intern (format nil "+~A+" color)
+                          :cl-colors))))
+
+(defun make-color (name)
+  (let ((color (etypecase name
+                 (string (cl-colors:as-rgb name))
+                 (keyword (keyword-to-color name)))))
+    (cond
+      (color (gui::color-values-to-nscolor (cl-colors:rgb-red color)
+                                           (cl-colors:rgb-green color)
+                                           (cl-colors:rgb-blue color)))
+      (t (log:warn "Color is not supported" name "See the full list in barista/vars:+supported-colors+")
+         (make-color :black)))))
+
+
+;; Attributed string
+
+(defun make-attributed-string (text &key font color (size +default-font-size+))
+  (let* ((font (cond
+                 (font (make-font font :size size))
+                 (size (make-default-font size))))
+         (attributes (make-dict (append (when font
+                                          (list (cons #$NSFontAttributeName
+                                                      font)))
+                                        (when color
+                                          (list (cons #$NSForegroundColorAttributeName (make-color color))))))))
+    (#/initWithString:attributes: (make-instance 'ns:ns-attributed-string)
+                                  (objc-string text)
+                                  attributes)))
+
+(defun join-attributed-string (&rest parts)
+  (flet ((make-attributed-if-needed (s)
+           (etypecase s
+             (string (make-attributed-string s))
+             (cons (apply 'make-attributed-string s))
+             (ns:ns-attributed-string s))))
+    (loop with result = (make-instance 'ns:ns-mutable-attributed-string)
+          for part in parts
+          do (#/appendAttributedString: result
+                                        (make-attributed-if-needed part))
+          finally (return result))))
+
+
+(defun is-attributed-string-definition (string)
+  (check-type string cons)
+  (or (member :color string)
+      (member :font string)
+      (member :size string)))
+
+
+(defun get-string-form-for-macro (string)
+  (etypecase string
+    (string string)
+    (symbol string)
+    (cons (cond
+            ((is-attributed-string-definition string)
+             `(barista/classes:make-attributed-string
+               ,@string))
+            ;; Or it can be a list of string. In this case we need
+            ;; to join them
+            (t
+             `(barista/classes:join-attributed-string
+               ,@(mapcar 'get-string-form-for-macro string)))))))
+
+
+;; Font
+
+(defun make-font (name &key (size +default-font-size+))
+  (check-type name string)
+  (check-type size integer)
+  (let ((result (#/fontWithName:size: ns:ns-font (objc-string name) size)))
+    (cond
+      ((eql result ccl:+null-ptr+)
+       (log:warn "Unknown font" name)
+       (values))
+      (t result))))
+
+
+(defun make-default-font (size)
+  (check-type size integer)
+  (#/menuFontOfSize: ns:ns-font size))
