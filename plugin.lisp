@@ -24,7 +24,8 @@
    #:get-title
    #:replace-menu
    #:get-available-plugins
-   #:get-menu))
+   #:get-menu
+   #:with-plugin))
 (in-package barista/plugin)
 
 
@@ -230,3 +231,23 @@
   (check-type from symbol)
   (check-type to symbol)
   `(%replace-menu ',from ',to))
+
+
+(defmacro with-plugin (name &body body)
+  "Runs body with barista/vars:*plugin* bound to the named plugin.
+
+   This macro is useful for debugging, for example, when you need
+   to run your `update` function the same way, like barista is
+   running it on schedule. Or to simulate a click on the menu.
+
+   Argument name is not evaluated and considered a symbol, used in the
+   `defplugin' call."
+  (check-type name symbol)
+
+  `(let ((*plugin*
+           (getf barista/plugin::*running-plugins*
+                 ',name)))
+     (unless *plugin*
+       (error "Plugin ~A is not running, start it with `start-plugin` call."
+              name))
+     ,@body))
