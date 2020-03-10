@@ -29,7 +29,7 @@
         (get-available-plugins)))
 
 
-(defun main ()
+(defun main (&key (sleep t))
   ;; (format t "ARGS: ~A~%"
   ;;         (uiop:command-line-arguments))
   (log:config :sane2 :debug :daily "/tmp/barista.log")
@@ -48,10 +48,9 @@
     (loop (sleep 5))))
 
 
-  (push "/Users/art/projects/lisp/cl-github/" asdf:*central-registry*)
-  
-  ;; (load-plugins)
-  ;; (start-plugins)
-  
-  (log:info "Sleeping")
-  (loop (sleep 5)))
+;; I redefine this function to run my own entry-point.
+;; Passing a toplevel-function to the ccl::build-application
+;; does not work:
+;; https://lists.clozure.com/pipermail/openmcl-devel/2010-June/007401.html
+(defun gui::initialize-user-interface ()
+  (main :sleep nil))
