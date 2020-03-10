@@ -154,9 +154,14 @@
        (values ,menu-var))))
 
 
-(defun make-menu (name)
-  (check-type name symbol)
-  (let ((constructor (getf *menu-constructors* name)))
-    (unless constructor
-      (error "Unable to find menu constructor for ~A" name))
-    (funcall constructor)))
+(defun make-menu (name-or-menu)
+  (check-type name-or-menu (or symbol ns:ns-menu))
+  (etypecase name-or-menu
+    (symbol
+     (let* ((name name-or-menu)
+            (constructor (or (getf *menu-constructors* name)
+                             (symbol-function name))))
+       (unless constructor
+         (error "Unable to find menu constructor for ~A" name))
+       (funcall constructor)))
+    (ns:ns-menu name-or-menu)))

@@ -10,4 +10,5 @@
 (defmethod asdf:operate :before ((op asdf:load-op)
                                  (c (eql (asdf:find-system "barista")))
                                  &rest rest)
+  (declare (ignorable rest))
   (require "COCOA"))
