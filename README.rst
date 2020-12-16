@@ -24,7 +24,7 @@ to the Barista too.
 Installation
 ============
 
-Right now there is no a binary to install, you need a ClosureCL to load and run program.
+Right now there is no a binary to install, you need a `LispWorks`_ to load and run program.
 
 Roadmap
 =======
@@ -36,3 +36,4 @@ Roadmap
 
 .. _BitBar: https://getbitbar.com/
 .. _TextBar: http://richsomerfield.com/apps/textbar/
+.. _LispWorks: http://www.lispworks.com/
