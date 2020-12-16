@@ -6,8 +6,7 @@
                 #:get-status-item
                 #:get-menu
                 #:get-title
-                #:get-status-bar
-                #:objc-string)
+                #:get-status-bar)
   (:import-from #:barista/vars
                 #:*plugin*)
   (:import-from #:barista/utils
@@ -23,44 +22,32 @@
 
 (defvar *menu-constructors* nil)
 
+;; From NSStatusBar.h
+(defconstant NSVariableStatusItemLength -1.0)
+
 
 (defmethod initialize-instance :after ((item barista/classes:status-item) &rest initargs)
   (declare (ignorable initargs))
-  (let ((status-item (#/statusItemWithLength: (get-status-bar item)
-                                              #$NSVariableStatusItemLength)))
-    (#/retain status-item)
-    (#/setTitle: status-item
-                 (objc-string (get-title item)))
+  (let ((status-item (objc:invoke (get-status-bar item)
+                                  "statusItemWithLength:"
+                                  NSVariableStatusItemLength)))
+    (objc:retain status-item)
+    (objc:invoke status-item "setTitle:"
+                 (get-title item))
     ;; (let ((button (objc:objc-message-send status-item "button")))
     ;;   (#/setToolTip: button #@"Hello world")
     ;;   (#/setTarget: button menu)
     ;;   (#/setAction: button (objc:@selector #/menuClicked)))
 
-    (#/setHighlightMode: status-item t)
+    (objc:invoke status-item "setHighlightMode:" t)
     
     (let ((menu (get-menu item)))
-      ;; TODO: replace with setf
-      (#/setMenu: status-item
-                  menu))
+      (objc:invoke status-item "setMenu:"
+                   menu))
     
     (setf (slot-value item
                       'barista/classes::status-item)
           status-item)))
-
-
-;; TODO: may be remove, seems i dont need this method in API
-(defun add-menu-item (menu title &key callback)
-  (let ((item (#/alloc barista/classes::menu-item)))
-    (#/initWithTitle:action:keyEquivalent: item
-                                           (objc-string title)
-                                           (objc:@selector #/theCallback)
-                                           #@"")
-    (when callback
-      (setf (get-callback item)
-            callback))
-    (#/setTarget: item item)
-    (#/addItem: (get-menu menu) item)
-    (values item)))
 
 
 (defgeneric hide (item)
@@ -68,25 +55,30 @@
     ;; This setView is needed to correctly refresh a status bar after
     ;; the menu item will be hidden:
     ;; https://stackoverflow.com/questions/23066802/how-to-remove-statusbaritem-from-code
-    (#/setView: (get-status-item item) nil)
-    (#/removeStatusItem: (get-status-bar item)
-                         (get-status-item item))
-    (#/release (get-status-item item))))
+
+    (objc:invoke (get-status-item item) "setView:"
+                 nil)
+    (objc:invoke (get-status-bar item) "removeStatusItem:"
+                 (get-status-item item))
+    (objc:release (get-status-item item))))
 
 
 (defun %add-menu-item (menu title &key callback submenu url)
-  (let ((item (#/alloc barista/classes::menu-item))
-        (title (objc-string title)))
-    (#/initWithTitle:action:keyEquivalent: item
-                                           title
-                                           (objc:@selector #/theCallback)
-                                           #@"")
+  (let* ((item (make-instance 'barista/classes::menu-item))
+         (item-pointer (objc:objc-object-pointer item)))
+    (objc:invoke item-pointer "initWithTitle:action:keyEquivalent:"
+                 title
+                 (objc:coerce-to-selector "theCallback")
+                 "")
     ;; If title has a special color or font, then we have to
     ;; put it into a separate attribute. Otherwise menu will not be displayed.
     ;; Why, Apple!? Why?
-    (when (typep title ns:ns-attributed-string)
-      (setf (#/attributedTitle item)
-            title))
+    ;;
+    ;; NOTE: I didn't found how to check objective-c object's type
+    ;; in LispWorks. Previously we checked for:
+    ;; (typep title ns:ns-attributed-string)
+    (when (barista/classes:objc-typep title "NSAttributedString")
+      (objc:invoke item "attributedTitle:" title))
     
     (when (and callback url)
       (error "Callback and URL can't be specified simultaneously."))
@@ -109,11 +101,12 @@
     
     (when submenu
       (let ((submenu (make-menu submenu)))
-        (setf (#/submenu item)
-              submenu)))
+        ;; NOTE: in CCL setf was here:
+        (objc:invoke item-pointer "setSubmenu:" submenu)))
     
-    (#/setTarget: item item)
-    (#/addItem: menu item)
+    (objc:invoke item-pointer
+                 "setTarget:" item-pointer)
+    (objc:invoke menu "addItem:" item-pointer)
     (values item)))
 
 
@@ -134,7 +127,7 @@
                            collect (%make-menu-item-call menu-var item))))
     `(progn
        (defun ,func-name ()
-         (let ((,menu-var (#/new ns:ns-menu)))
+         (let ((,menu-var (objc:alloc-init-object "NSMenu")))
            (log:info "Creating menu" ',name)
            ,@item-calls
            (values ,menu-var)))
@@ -144,7 +137,7 @@
 
 (defmacro build-menu (&body body)
   (let* ((menu-var (gensym "MENU")))
-    `(let ((,menu-var (#/new ns:ns-menu)))
+    `(let ((,menu-var (objc:alloc-init-object "NSMenu")))
        (flet ((add-item (title &key callback submenu url)
                 (%add-menu-item ,menu-var title
                                 :callback callback
@@ -155,13 +148,13 @@
 
 
 (defun make-menu (name-or-menu)
-  (check-type name-or-menu (or symbol ns:ns-menu))
-  (etypecase name-or-menu
-    (symbol
-     (let* ((name name-or-menu)
-            (constructor (or (getf *menu-constructors* name)
-                             (symbol-function name))))
-       (unless constructor
-         (error "Unable to find menu constructor for ~A" name))
-       (funcall constructor)))
-    (ns:ns-menu name-or-menu)))
+  (cond
+   ((typep name-or-menu 'symbol)
+    (let* ((name name-or-menu)
+           (constructor (or (getf *menu-constructors* name)
+                            (symbol-function name))))
+      (unless constructor
+        (error "Unable to find menu constructor for ~A" name))
+      (funcall constructor)))
+   ((barista/classes:objc-typep name-or-menu "NSMenu") name-or-menu)
+   (t (error "Object ~A has unsupported type. It should be a symbol or NSMenu."))))

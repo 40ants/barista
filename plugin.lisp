@@ -19,12 +19,15 @@
    #:defplugin
    #:start-plugin
    #:stop-plugin
+   #:restart-plugin
    #:get-plugin-instance
    #:is-plugin-running
    #:get-title
    #:replace-menu
    #:get-available-plugins
    #:get-menu
+   #:running-plugins
+   
    #:with-plugin))
 (in-package barista/plugin)
 
@@ -60,6 +63,9 @@
   (setf (barista/classes:get-title (get-status-item plugin))
         value))
 
+(defun running-plugins ()
+  (loop for name in *running-plugins* by #'cddr
+        collect name))
 
 (defun get-plugin-instance (class-name)
   (getf *running-plugins* class-name))
@@ -99,17 +105,17 @@
 (defun get-available-plugins ()
   *available-plugins*)
 
-
 (defun start-plugin (class-name)
   (on-main-thread 
    (when (is-plugin-running class-name)
      (log:info "Stopping a plugin instance" class-name)
      (stop-plugin class-name))
-
    (log:info "Creating a plugin instance" class-name)
    (let ((instance (make-instance class-name)))
      (initialize-plugin instance))))
 
+(defun restart-plugin (class-name)
+  (start-plugin class-name))
 
 (defun get-title-from (options)
   (let ((title (second (assoc :title options))))

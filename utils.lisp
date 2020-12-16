@@ -69,6 +69,8 @@
 
 
 (defmacro on-main-thread (&rest actions)
-  `(ccl::call-in-event-process
-    #'(lambda ()
-        ,@actions)))
+  `(progn ,@actions)
+;;;   `(ccl::call-in-event-process
+;;;     #'(lambda ()
+;;;         ,@actions))
+  )

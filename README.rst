@@ -2,6 +2,9 @@
  Barista
 =========
 
+.. image:: images/pomodoro.gif
+   :alt: Pomodoro Plugin Demo
+
 This programm allows you to put any information you need into the OSX's menu bar.
 
 There is similar software - the `BitBar`_ and `TextBar`_. The difference between the BitBar and Barista:
