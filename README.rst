@@ -25,6 +25,22 @@ Installation
 ============
 
 Right now there is no a binary to install, you need a `LispWorks`_ to load and run program.
+Here is how to install it and run built-in plugins.
+
+Fist, add an Ultralisp quicklisp distribution containing `LispWorks`_ extensions:
+
+.. code::
+
+   (ql-dist:install-dist "http://dist.ultralisp.org/lispworks.txt"
+                         :prompt nil)
+
+Next, load ``Barista`` with built-in plugins and run them:
+
+.. code::
+
+   (ql:quickload :barista)
+   (ql:quickload :barista-plugins)
+   (barista/main:start-plugins)
 
 Roadmap
 =======
