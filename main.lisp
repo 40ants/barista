@@ -8,7 +8,8 @@
                 #:start-plugin)
   (:export
    #:load-plugins
-   #:start-plugins))
+   #:start-plugins
+   #:stop-plugins))
 (in-package barista/main)
 
 
@@ -27,6 +28,12 @@
   (log:info "Starting plugins")
   (mapc #'start-plugin
         (get-available-plugins)))
+
+
+(defun stop-plugins ()
+  (log:info "Starting plugins")
+  (mapc #'barista/plugin:stop-plugin
+        (barista/plugin:running-plugins)))
 
 
 (defun main (&key (sleep t) (swank nil))

@@ -135,6 +135,11 @@
              #',func-name))))
 
 
+(defun add-item (title &key callback submenu url)
+  (declare (ignore title callback submenu url))
+  (error "This function should be called inside BUILD-MENU macro."))
+
+
 (defmacro build-menu (&body body)
   (let* ((menu-var (gensym "MENU")))
     `(let ((,menu-var (objc:alloc-init-object "NSMenu")))

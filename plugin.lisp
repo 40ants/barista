@@ -28,7 +28,8 @@
    #:get-menu
    #:running-plugins
    
-   #:with-plugin))
+   #:with-plugin
+   #:restart-plugins))
 (in-package barista/plugin)
 
 
@@ -117,6 +118,10 @@
 (defun restart-plugin (class-name)
   (start-plugin class-name))
 
+(defun restart-plugins ()
+  (mapc #'restart-plugin
+        (running-plugins)))
+
 (defun get-title-from (options)
   (let ((title (second (assoc :title options))))
     (get-string-form-for-macro title)))
@@ -161,7 +166,9 @@
                                    (log:error "Unhandled exception" *plugin* ,description condition)
                                    (when *debug*
                                      (invoke-debugger condition))
-                                   (sleep ,delay))))
+                                   (log:info "Going to sleep after error")
+                                   (sleep ,delay)
+                                   (log:info "Awakening"))))
              ,@code
              (sleep ,delay)))))
       :name (fmt nil
