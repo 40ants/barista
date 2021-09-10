@@ -1,5 +1,6 @@
 (defpackage #:barista/menu
   (:use #:cl)
+  (:import-from #:log4cl)
   (:import-from #:barista/classes
                 #:get-string-form-for-macro
                 #:get-callback
@@ -26,6 +27,58 @@
 (defconstant NSVariableStatusItemLength -1.0)
 
 
+(defun key-pressed-p (event key)
+
+  (let ((flags (objc:invoke event
+                            "modifierFlags")))
+    ;; https://www.oreilly.com/library/view/cocoa-in-a/0596004621/re186.html
+    (case key
+      (:shift     (plusp (logand flags
+                                 (expt 2 17))))
+      (:control   (plusp (logand flags
+                                 (expt 2 18))))
+      (:alt       (plusp (logand flags
+                                 (expt 2 19))))
+      (:caps-lock (plusp (logand flags
+                                 (expt 2 16))))
+      (:command   (plusp (logand flags
+                                 (expt 2 20))))
+      (t nil))))
+
+
+(defparameter *barista-menu* nil)
+
+(defun get-barista-menu ()
+  (or *barista-menu*
+      (setf *barista-menu*
+            (flet ((just-log (&rest args)
+                     (log:info "Main menu called with" args)))
+              (build-menu
+                (add-item "Restart all plugins"
+                          :callback (lambda (menu-item)
+                                      (declare (ignore menu-item))
+                                      (barista/plugin:restart-plugins))))))))
+
+
+(objc:define-objc-method ("onBaristaItemClick" :void)
+                         ((self barista/classes::status-item))
+
+  (let* ((event (objc:invoke (objc:invoke "NSApplication" "sharedApplication")
+                             "currentEvent"))
+         (menu (if (key-pressed-p event :alt)
+                   (get-barista-menu)
+                   (get-menu self)))
+         (button (objc:invoke (get-status-item self)
+                              "button"))
+         (frame (objc:invoke button "frame")))
+
+    (objc:invoke menu
+                 "popUpMenuPositioningItem:atLocation:inView:"
+                 nil
+                 (make-array 2 :initial-contents (list 0 (* 1.2 (elt frame 3))))
+                 button)))
+
+
 (defmethod initialize-instance :after ((item barista/classes:status-item) &rest initargs)
   (declare (ignorable initargs))
   (let ((status-item (objc:invoke (get-status-bar item)
@@ -34,20 +87,22 @@
     (objc:retain status-item)
     (objc:invoke status-item "setTitle:"
                  (get-title item))
-    ;; (let ((button (objc:objc-message-send status-item "button")))
-    ;;   (#/setToolTip: button #@"Hello world")
-    ;;   (#/setTarget: button menu)
-    ;;   (#/setAction: button (objc:@selector #/menuClicked)))
-
-    (objc:invoke status-item "setHighlightMode:" t)
     
-    (let ((menu (get-menu item)))
-      (objc:invoke status-item "setMenu:"
-                   menu))
+    (let ((button (objc:invoke status-item "button")))
+      (objc:invoke button  "setToolTip:"
+                   (format nil "Barista plugin \"~A\""
+                           (symbol-name (type-of *plugin*)))))
+
+    (objc:invoke status-item "setAction:"
+                 (objc:coerce-to-selector "onBaristaItemClick"))
+    (objc:invoke status-item "setTarget:"
+                 (objc:objc-object-pointer item))
     
     (setf (slot-value item
                       'barista/classes::status-item)
-          status-item)))
+          status-item))
+  (log:info "Status item initialized")
+  (values))
 
 
 (defgeneric hide (item)

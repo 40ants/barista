@@ -46,7 +46,8 @@
           :reader get-title)
    (menu :initform nil
          :initarg :menu
-         :reader get-menu)))
+         :reader get-menu))
+  (:objc-class-name "BaristaStatusItem"))
 
 
 (defmethod (setf get-title) (value (self status-item))
@@ -59,10 +60,6 @@
 
 
 (defmethod (setf get-menu) (new-menu (self status-item))
-  (let ((status-item (get-status-item self)))
-    (when status-item
-      (objc:invoke status-item "setMenu:"
-                   new-menu)))
   (setf (slot-value self 'menu)
         new-menu))
 
