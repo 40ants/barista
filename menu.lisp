@@ -85,6 +85,10 @@
                                   "statusItemWithLength:"
                                   NSVariableStatusItemLength)))
     (objc:retain status-item)
+    
+    (objc:invoke status-item "setHighlightMode:"
+                 1)
+    
     (objc:invoke status-item "setTitle:"
                  (get-title item))
     
