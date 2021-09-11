@@ -46,18 +46,17 @@
       (t nil))))
 
 
-(defparameter *barista-menu* nil)
+(defparameter *barista-menu*
+  (flet ((just-log (&rest args)
+           (log:info "Main menu called with" args)))
+    (build-menu
+      (add-item "Restart all plugins"
+                :callback (lambda (menu-item)
+                            (declare (ignore menu-item))
+                            (uiop:symbol-call :barista/plugin :restart-plugins))))))
 
 (defun get-barista-menu ()
-  (or *barista-menu*
-      (setf *barista-menu*
-            (flet ((just-log (&rest args)
-                     (log:info "Main menu called with" args)))
-              (build-menu
-                (add-item "Restart all plugins"
-                          :callback (lambda (menu-item)
-                                      (declare (ignore menu-item))
-                                      (barista/plugin:restart-plugins))))))))
+  *barista-menu*)
 
 
 (objc:define-objc-method ("onBaristaItemClick" :void)

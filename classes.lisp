@@ -53,7 +53,8 @@
 (defmethod (setf get-title) (value (self status-item))
   (let ((status-item (get-status-item self)))
     (when status-item
-      (objc:invoke status-item "setTitle:"
+      (objc:invoke status-item
+                   "setTitle:"
                    value)))
   (setf (slot-value self 'title)
         value))
