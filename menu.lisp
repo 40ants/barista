@@ -71,11 +71,12 @@
                               "button"))
          (frame (objc:invoke button "frame")))
 
-    (objc:invoke menu
-                 "popUpMenuPositioningItem:atLocation:inView:"
-                 nil
-                 (make-array 2 :initial-contents (list 0 (* 1.2 (elt frame 3))))
-                 button)))
+    (when menu
+      (objc:invoke menu
+                   "popUpMenuPositioningItem:atLocation:inView:"
+                   nil
+                   (make-array 2 :initial-contents (list 0 (* 1.2 (elt frame 3))))
+                   button))))
 
 
 (defmethod initialize-instance :after ((item barista/classes:status-item) &rest initargs)
