@@ -46,19 +46,6 @@
       (t nil))))
 
 
-(defparameter *barista-menu*
-  (flet ((just-log (&rest args)
-           (log:info "Main menu called with" args)))
-    (build-menu
-      (add-item "Restart all plugins"
-                :callback (lambda (menu-item)
-                            (declare (ignore menu-item))
-                            (uiop:symbol-call :barista/plugin :restart-plugins))))))
-
-(defun get-barista-menu ()
-  *barista-menu*)
-
-
 (objc:define-objc-method ("onBaristaItemClick" :void)
                          ((self barista/classes::status-item))
 
@@ -222,3 +209,16 @@
       (funcall constructor)))
    ((barista/classes:objc-typep name-or-menu "NSMenu") name-or-menu)
    (t (error "Object ~A has unsupported type. It should be a symbol or NSMenu."))))
+
+
+(defparameter *barista-menu*
+  (flet ((just-log (&rest args)
+           (log:info "Main menu called with" args)))
+    (build-menu
+      (add-item "Restart all plugins"
+                :callback (lambda (menu-item)
+                            (declare (ignore menu-item))
+                            (uiop:symbol-call :barista/plugin :restart-plugins))))))
+
+(defun get-barista-menu ()
+  *barista-menu*)
