@@ -4,11 +4,11 @@
                 #:fmt)
   (:import-from #:local-time-duration
                 #:duration-as)
-  (:export
-   #:format-duration
-   #:open-url
-   #:on-main-thread))
-(in-package barista/utils)
+  (:import-from #:bordeaux-threads)
+  (:export #:format-duration
+           #:open-url
+           #:on-main-thread))
+(in-package #:barista/utils)
 
 
 (defun format-duration (duration &optional stream)
@@ -65,7 +65,11 @@
 
 
 (defun open-url (url)
-  (uiop:run-program (format nil "open ~A" url)))
+  (let ((command (format nil "open ~A" url)))
+    (bordeaux-threads:make-thread
+     (lambda ()
+       (uiop:run-program command))
+     :name command)))
 
 
 (defmacro on-main-thread (&rest actions)

@@ -15,6 +15,10 @@
                 #:fmt)
   (:import-from #:bordeaux-threads
                 #:make-thread)
+  (:import-from #:log4cl-extras/context
+                #:with-fields)
+  (:import-from #:log4cl-extras/error
+                #:with-log-unhandled)
   (:export
    #:defplugin
    #:start-plugin
@@ -163,13 +167,14 @@
         (loop do
           (ignore-errors
            (handler-bind ((error (lambda (condition)
-                                   (log:error "Unhandled exception" *plugin* ,description condition)
                                    (when *debug*
                                      (invoke-debugger condition))
                                    (log:info "Going to sleep after error")
                                    (sleep ,delay)
                                    (log:info "Awakening"))))
-             ,@code
+             (with-log-unhandled ()
+               (with-fields (:plugin *plugin*)
+                 ,@code))
              (sleep ,delay)))))
       :name (fmt nil
                  (:a *plugin*)

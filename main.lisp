@@ -6,6 +6,7 @@
   (:import-from #:barista/plugin
                 #:get-available-plugins
                 #:start-plugin)
+  (:import-from #:log4cl-extras/config)
   (:export
    #:load-plugins
    #:start-plugins
@@ -36,18 +37,29 @@
         (barista/plugin:running-plugins)))
 
 
-(defun main (&key (sleep t) (swank nil))
-  ;; (format t "ARGS: ~A~%"
-  ;;         (uiop:command-line-arguments))
-  (log:config :sane2 :debug :daily "/tmp/barista.log")
+(defvar *interface* nil)
 
+
+(defun main (&key (block t) (swank nil))
+  (log4cl-extras/config:setup '(:level :debug
+                                :appenders ((file
+                                             :file "/tmp/barista.log"
+                                             :layout :plain))))
+  
   (when swank
     (log:info "Starting SWANK server")
     (swank:create-server :port 5007 :dont-close t :style :spawn))
 
   (load-plugins)
-  (start-plugins)
 
-  (when sleep
+  ;; All commands which adds menus should be runned from CAPI process
+  ;; that is why we create empty interface object here.
+  (setf *interface* (capi:display (make-instance 'capi:interface :title "Barista")))
+  (capi:hide-interface *interface*
+                       ;; not iconify, just hide
+                       nil)
+  (capi:execute-with-interface *interface* 'start-plugins)
+
+  (when block
     (log:info "Sleeping")
     (loop (sleep 5))))

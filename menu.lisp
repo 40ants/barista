@@ -181,21 +181,23 @@
              #',func-name))))
 
 
+(defvar *current-menu* nil)
+
+
 (defun add-item (title &key callback submenu url)
-  (declare (ignore title callback submenu url))
-  (error "This function should be called inside BUILD-MENU macro."))
+  (unless *current-menu*
+    (error "This function should be called inside BUILD-MENU macro."))
+
+  (%add-menu-item *current-menu* title
+                  :callback callback
+                  :submenu submenu
+                  :url url))
 
 
 (defmacro build-menu (&body body)
-  (let* ((menu-var (gensym "MENU")))
-    `(let ((,menu-var (objc:alloc-init-object "NSMenu")))
-       (flet ((add-item (title &key callback submenu url)
-                (%add-menu-item ,menu-var title
-                                :callback callback
-                                :submenu submenu
-                                :url url)))
-         ,@body)
-       (values ,menu-var))))
+  `(let ((*current-menu* (objc:alloc-init-object "NSMenu")))
+     ,@body
+     (values *current-menu*)))
 
 
 (defun make-menu (name-or-menu)
