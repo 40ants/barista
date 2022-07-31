@@ -42,7 +42,7 @@
                                   (offset :sec (* minutes 60))))
   (update)
   (barista/plugin:replace-menu start stop)
-  (notify "Pomodoro starting" :title "Pomodoro" :sound :hero))
+  (notify "Pomodoro starting" :title "Pomodoro" :sound :funk))
 
 
 (defun stop (self)
