@@ -8,10 +8,10 @@
                 #:make-keyword)
   (:import-from #:fmt
                 #:fmt)
-  (:export
-   #:notify
-   #:get-available-sounds))
-(in-package barista/notify)
+  (:import-from #:bordeaux-threads)
+  (:export #:notify
+           #:get-available-sounds))
+(in-package #:barista/notify)
 
 
 (defcached get-available-sounds ()
@@ -39,5 +39,8 @@
                         " sound name "
                         (:s (symbol-name sound) ))
                       "'")))
-    (uiop:run-program command))
+    (bordeaux-threads:make-thread
+     (lambda ()
+       (uiop:run-program command))
+     :name command))
   (values))
