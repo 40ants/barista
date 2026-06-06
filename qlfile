@@ -1,18 +1,19 @@
 dist ultralisp http://dist.ultralisp.org/
 
-ql cffi
-ql trivial-main-thread
-ql bordeaux-threads
-ql log4cl
-ql log4cl-extras
-ql cl-colors
-ql alexandria
-ql fmt
-ql local-time
-ql local-time-duration
-ql swank-protocol
-ql f-underscore
-ql function-cache
-ql cl-fad
-ql cl-ppcre
-ql cl-strings
+# ql cffi
+# ql trivial-main-thread
+# ql bordeaux-threads
+# ql log4cl
+# ql log4cl-extras
+# ql cl-colors
+# ql alexandria
+# ql fmt
+# ql local-time
+# ql local-time-duration
+# ql swank-protocol
+# ql f-underscore
+# ql function-cache
+# ql cl-fad
+# ql cl-ppcre
+# ql priority-queue
+# ql cl-strings
