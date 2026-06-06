@@ -28,8 +28,6 @@ if [ ! -d ".qlot" ]; then
 fi
 
 # ---- 2. Build SBCL executable image via ASDF -------------------------------
-# ASDF build creates a clean executable without linker-signed signature
-# (avoiding the conflict with codesign that ros dump has).
 echo "==> Building SBCL executable..."
 rm -f barista
 qlot exec ros run -L $LISP -e '(ql:quickload :barista)' -e '(asdf:make :barista)'
