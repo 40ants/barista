@@ -45,7 +45,7 @@ jobs:
         run: ./build.sh
 
       - name: Sign with ad-hoc signature
-        run: codesign --deep --force --sign - dist/Barista.app
+        run: codesign --force --sign - --options runtime dist/Barista.app
 
       - name: Create DMG
         run: |
