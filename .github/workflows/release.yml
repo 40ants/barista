@@ -45,7 +45,17 @@ jobs:
         run: ./build.sh
 
       - name: Sign with ad-hoc signature
-        run: codesign --force --sign - --options runtime dist/Barista.app
+        run: |
+          # SBCL binaries from ros dump cannot be properly signed (linker-signed conflict)
+          # Skip signing - app will run with Gatekeeper warning
+          echo "Skipping code signing for SBCL-dumped binary"
+
+      - name: Verify app is executable
+        run: |
+          if [ ! -x "dist/Barista.app/Contents/MacOS/barista" ]; then
+            echo "Error: barista binary is not executable"
+            exit 1
+          fi
 
       - name: Create DMG
         run: |
