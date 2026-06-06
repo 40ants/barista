@@ -45,8 +45,7 @@
   (notify "Pomodoro starting" :title "Pomodoro" :sound :funk))
 
 
-(defun stop (self)
-  (declare (ignorable self))
+(defun stop ()
   (setf (get-title *plugin*) *stopped-symbol*
         (get-state *plugin*) :stopped)
   (replace-menu stop start)

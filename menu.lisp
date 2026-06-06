@@ -57,8 +57,7 @@
     ((self :pointer) (cmd :pointer) (sender :pointer))
   (declare (ignore self cmd))
   ;; sender is the NSMenuItem. Look up the CL closure and call it.
-  ;; The closure accepts zero arguments (all plugin callbacks use f_% or
-  ;; similar wrappers); the sender pointer is available via closure if needed.
+  ;; Callbacks accept zero arguments; *plugin* is rebound inside the closure.
   (let ((fn (gethash (cffi:pointer-address sender) *action-callbacks*)))
     (when fn
       (handler-case (funcall fn sender)
@@ -242,8 +241,9 @@
         (send ns-item "setTarget:" :pointer target :void)
         (setf (gethash (cffi:pointer-address ns-item) *action-callbacks*)
               (lambda (sender)
+                (declare (ignore sender))
                 (let ((*plugin* captured-plugin))
-                  (funcall cb sender))))))
+                  (funcall cb))))))
 
     (when submenu
       (send ns-item "setSubmenu:" :pointer (make-menu submenu) :void))
@@ -340,4 +340,8 @@
             (build-menu
               (add-item "Restart all plugins"
                         :callback (lambda ()
-                                    (uiop:symbol-call :barista/plugin :restart-plugins)))))))
+                                    (uiop:symbol-call :barista/plugin :restart-plugins)))
+              (add-item "Quit"
+                        :callback (lambda ()
+                                    (log:info "Quitting")
+                                    (uiop:quit 0)))))))
