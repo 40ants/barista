@@ -1,2 +1,0 @@
-# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
-local-time http://beta.quicklisp.org/archive/local-time/2026-01-01/local-time-20260101-git.tgz 563503 ff972a7acd3ad241f852b7bb8cab6433 7dde9b702bd721121a179d75dd53543ff6ede5e9 local-time-20260101-git cl-postgres+local-time.asd local-time.asd

@@ -1,6 +1,0 @@
-name: local-time-duration
-version: ql-2018-04-30
-distinfo-subscription-url: qlot://localhost/local-time-duration.txt
-canonical-distinfo-url: qlot://localhost/local-time-duration.txt
-release-index-url: qlot://localhost/local-time-duration/ql-2018-04-30/releases.txt
-system-index-url: qlot://localhost/local-time-duration/ql-2018-04-30/systems.txt

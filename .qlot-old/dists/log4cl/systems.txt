@@ -1,7 +1,0 @@
-# project system-file system-name [dependency1..dependencyN]
-log4cl log4cl log4cl asdf bordeaux-threads
-log4cl log4cl-examples log4cl-examples asdf log4cl swank
-log4cl log4cl.log4slime log4cl.log4slime asdf log4cl swank
-log4cl log4cl.log4sly log4cl.log4sly asdf log4cl slynk
-log4cl log4cl log4cl/syslog log4cl
-log4cl log4cl log4cl/test log4cl stefil

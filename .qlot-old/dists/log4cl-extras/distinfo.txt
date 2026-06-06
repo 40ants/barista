@@ -1,6 +1,0 @@
-name: log4cl-extras
-version: ql-2026-01-01
-distinfo-subscription-url: qlot://localhost/log4cl-extras.txt
-canonical-distinfo-url: qlot://localhost/log4cl-extras.txt
-release-index-url: qlot://localhost/log4cl-extras/ql-2026-01-01/releases.txt
-system-index-url: qlot://localhost/log4cl-extras/ql-2026-01-01/systems.txt

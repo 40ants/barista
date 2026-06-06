@@ -1,3 +1,0 @@
-# project system-file system-name [dependency1..dependencyN]
-local-time-duration cl-postgres+local-time-duration cl-postgres+local-time-duration asdf cl-postgres local-time-duration
-local-time-duration local-time-duration local-time-duration alexandria asdf esrap local-time

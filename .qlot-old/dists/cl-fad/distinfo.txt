@@ -1,6 +1,0 @@
-name: cl-fad
-version: ql-2022-02-20
-distinfo-subscription-url: qlot://localhost/cl-fad.txt
-canonical-distinfo-url: qlot://localhost/cl-fad.txt
-release-index-url: qlot://localhost/cl-fad/ql-2022-02-20/releases.txt
-system-index-url: qlot://localhost/cl-fad/ql-2022-02-20/systems.txt

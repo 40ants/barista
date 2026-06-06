@@ -1,3 +1,0 @@
-# project system-file system-name [dependency1..dependencyN]
-cl-fad cl-fad cl-fad alexandria asdf bordeaux-threads
-cl-fad cl-fad cl-fad/test cl-fad cl-ppcre unit-test

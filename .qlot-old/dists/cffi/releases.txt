@@ -1,2 +1,0 @@
-# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
-cffi http://beta.quicklisp.org/archive/cffi/2026-01-01/cffi-20260101-git.tgz 264325 46e6e20269f4bba0a0cc793af9273a5b c39a0f5eaf49a99a5473192380c64e60bd8a7f2f cffi-20260101-git cffi-examples.asd cffi-grovel.asd cffi-libffi.asd cffi-tests.asd cffi-toolchain.asd cffi-uffi-compat.asd cffi.asd

@@ -1,6 +1,0 @@
-name: local-time
-version: ql-2026-01-01
-distinfo-subscription-url: qlot://localhost/local-time.txt
-canonical-distinfo-url: qlot://localhost/local-time.txt
-release-index-url: qlot://localhost/local-time/ql-2026-01-01/releases.txt
-system-index-url: qlot://localhost/local-time/ql-2026-01-01/systems.txt

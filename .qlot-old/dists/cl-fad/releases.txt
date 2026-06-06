@@ -1,2 +1,0 @@
-# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
-cl-fad http://beta.quicklisp.org/archive/cl-fad/2022-02-20/cl-fad-20220220-git.tgz 25285 5caa98f5badf1d84ae385a3937ee2e01 27b33b1f84fa87e34ec852d3a30903106863844a cl-fad-20220220-git cl-fad.asd

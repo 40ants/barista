@@ -1,2 +1,0 @@
-# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
-log4cl http://beta.quicklisp.org/archive/log4cl/2023-06-18/log4cl-20230618-git.tgz 922372 4b80485879662a02887858163195480a ab5f1fc969a611273ab7d4aa4b8dd51af3a69b51 log4cl-20230618-git log4cl-examples.asd log4cl.asd log4cl.log4slime.asd log4cl.log4sly.asd
