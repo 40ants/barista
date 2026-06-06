@@ -13,13 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Roswell
-        uses: actions/cache@v4
-        with:
-          path: ~/.roswell
-          key: ${{ runner.os }}-roswell-${{ hashFiles('**/build.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-roswell-
+      # - name: Cache Roswell
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.roswell
+      #     key: ${{ runner.os }}-roswell-${{ hashFiles('**/build.sh') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-roswell-
 
       - name: Install Roswell
         run: brew install roswell && ros setup
@@ -30,13 +30,13 @@ jobs:
       - name: Install qlot
         run: ros install qlot
 
-      - name: Cache qlot dependencies
-        uses: actions/cache@v4
-        with:
-          path: .qlot
-          key: ${{ runner.os }}-qlot-${{ hashFiles('qlfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-qlot-
+      # - name: Cache qlot dependencies
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: .qlot
+      #     key: ${{ runner.os }}-qlot-${{ hashFiles('qlfile.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-qlot-
 
       - name: Add Roswell bin to PATH
         run: echo "$HOME/.roswell/bin" >> $GITHUB_PATH
