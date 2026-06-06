@@ -5,6 +5,7 @@
   (:import-from #:local-time-duration
                 #:duration-as)
   (:import-from #:bordeaux-threads)
+  (:import-from #:trivial-main-thread)
   (:export #:format-duration
            #:open-url
            #:on-main-thread))
@@ -65,6 +66,7 @@
 
 
 (defun open-url (url)
+  "Open URL in the default browser via a background thread."
   (let ((command (format nil "open ~A" url)))
     (bordeaux-threads:make-thread
      (lambda ()
@@ -73,8 +75,8 @@
 
 
 (defmacro on-main-thread (&rest actions)
-  `(progn ,@actions)
-;;;   `(ccl::call-in-event-process
-;;;     #'(lambda ()
-;;;         ,@actions))
-  )
+  "Execute ACTIONS on the AppKit main thread (thread 0).
+  Uses trivial-main-thread:call-in-main-thread so that AppKit objects
+  can be safely mutated from plugin worker threads."
+  `(trivial-main-thread:call-in-main-thread
+    (lambda () ,@actions)))

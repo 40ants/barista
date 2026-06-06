@@ -7,7 +7,8 @@
                 #:get-string-form-for-macro)
   (:import-from #:barista/menu
                 #:make-menu
-                #:hide)
+                #:hide
+                #:initialize-status-item)
   (:import-from #:barista/vars
                 #:*debug*
                 #:*plugin*)
@@ -31,38 +32,34 @@
    #:get-available-plugins
    #:get-menu
    #:running-plugins
-   
+
    #:with-plugin
    #:restart-plugins))
-(in-package barista/plugin)
+(in-package #:barista/plugin)
 
 
 (defvar *running-plugins* nil
   "A plist of running plugins where key is a symbol of the class name
-   and value is an instance of this class.")
-
+  and value is an instance of this class.")
 
 (defvar *available-plugins* nil
   "A list of available plugins. Each item is a symbol which can be used
-   as argument to a `start-plugin' function.")
+  as argument to a start-plugin function.")
 
 
 (defclass base-plugin ()
   ((status-item :initform nil
-                :type (or barista/classes:status-item
-                          null)
-                :documentation "An item for status bar."
+                :type (or barista/classes:status-item null)
+                :documentation "A barista/classes:status-item wrapping the AppKit NSStatusItem."
                 :accessor get-status-item)
    (threads :initform nil
-            :type (or list
-                      null)
-            :documentation "A list of threads, created by plugin."
+            :type (or list null)
+            :documentation "A list of BT threads created by this plugin."
             :accessor get-threads)))
 
 
 (defmethod get-title ((plugin base-plugin))
   (barista/classes:get-title (get-status-item plugin)))
-
 
 (defmethod (setf get-title) (value (plugin base-plugin))
   (setf (barista/classes:get-title (get-status-item plugin))
@@ -75,30 +72,29 @@
 (defun get-plugin-instance (class-name)
   (getf *running-plugins* class-name))
 
-
 (defun is-plugin-running (class-name)
   (not (null (get-plugin-instance class-name))))
 
 
 (defun stop-threads (plugin)
   (loop for thread in (get-threads plugin)
-        do (log:info "Stopping thread" thread)
+        do (log:info "Stopping thread ~A" thread)
            (bordeaux-threads:destroy-thread thread)))
 
 
 (defgeneric stop-plugin (plugin)
   (:method ((plugin symbol))
     (on-main-thread
-     (let ((obj (get-plugin-instance plugin)))
-       (when obj
-         (stop-plugin obj)))))
+      (let ((obj (get-plugin-instance plugin)))
+        (when obj
+          (stop-plugin obj)))))
   (:method ((plugin base-plugin))
     (on-main-thread
-     (stop-threads plugin)
-     (when (get-status-item plugin)
-       (hide (get-status-item plugin)))
-     (setf (getf *running-plugins* (class-name (class-of plugin)))
-           nil))))
+      (stop-threads plugin)
+      (when (get-status-item plugin)
+        (hide (get-status-item plugin)))
+      (setf (getf *running-plugins* (class-name (class-of plugin)))
+            nil))))
 
 
 (defgeneric initialize-plugin (plugin)
@@ -111,37 +107,35 @@
   *available-plugins*)
 
 (defun start-plugin (class-name)
-  (on-main-thread 
-   (when (is-plugin-running class-name)
-     (log:info "Stopping a plugin instance" class-name)
-     (stop-plugin class-name))
-   (log:info "Creating a plugin instance" class-name)
-   (let ((instance (make-instance class-name)))
-     (initialize-plugin instance))))
+  (on-main-thread
+    (when (is-plugin-running class-name)
+      (log:info "Stopping existing plugin instance ~A" class-name)
+      (stop-plugin class-name))
+    (log:info "Creating plugin instance ~A" class-name)
+    (let ((instance (make-instance class-name)))
+      (initialize-plugin instance))))
 
 (defun restart-plugin (class-name)
   (start-plugin class-name))
 
 (defun restart-plugins ()
-  (mapc #'restart-plugin
-        (running-plugins)))
+  (mapc #'restart-plugin (running-plugins)))
+
+
+;;; ---- defplugin helper utilities ------------------------------------------
 
 (defun get-title-from (options)
   (let ((title (second (assoc :title options))))
     (get-string-form-for-macro title)))
 
-
 (defun get-menu-from (options)
   (second (assoc :menu options)))
 
-
 (defun get-delay-from (period)
-  "Processes a period and returns a delay in seconds.
-   Period can be a keyword like :second, :minute, :hour or a list:
-
-   (list 15 :seconds)
-   (list 5 :minute)
-  "
+  "Process a period spec and return (values delay-seconds description-string).
+  Period may be a keyword like :second, :minute, :hour, or a list:
+    (15 :seconds)
+    (5 :minutes)"
   (let* ((period (etypecase period
                    (keyword (list 1 period))
                    (list period)))
@@ -152,12 +146,9 @@
          (multiplier (ecase (second period)
                        ((:second :seconds) 1)
                        ((:minute :minutes) 60)
-                       ((:hour :hours) 3600))))
-    
-    (values (* (first period)
-               multiplier)
+                       ((:hour   :hours)   3600))))
+    (values (* (first period) multiplier)
             as-string)))
-
 
 (defun make-worker-form (period code)
   (multiple-value-bind (delay description)
@@ -169,9 +160,9 @@
            (handler-bind ((error (lambda (condition)
                                    (when *debug*
                                      (invoke-debugger condition))
-                                   (log:info "Going to sleep after error")
+                                   (log:info "Sleeping after error")
                                    (sleep ,delay)
-                                   (log:info "Awakening"))))
+                                   (log:info "Waking up"))))
              (with-log-unhandled ()
                (with-fields (:plugin *plugin*)
                  ,@code))
@@ -183,24 +174,26 @@
       :initial-bindings (append (list (cons '*plugin* *plugin*))
                                 bordeaux-threads:*default-special-bindings*))))
 
-
 (defun get-workers-from (options)
-  "Processes :every forms and returns a list of lambdas which can be executed
-   in threads to call user's code in specified periods of time."
+  "Process :every forms and return a list of make-thread call forms."
   (loop for item in options
-        when (eql (first item)
-                  :every)
-          collect (make-worker-form (second item)
-                                    (cddr item))))
+        when (eql (first item) :every)
+          collect (make-worker-form (second item) (cddr item))))
 
+
+;;; ---- defplugin macro -----------------------------------------------------
 
 (defmacro defplugin (name (&rest slots) &body options)
+  "Define a Barista plugin class with background workers and a menu-bar item.
+
+  Options:
+    (:title EXPR)          -- initial status-bar title
+    (:menu SYMBOL)         -- name of a defmenu to show on click
+    (:every PERIOD FORMS)  -- background worker: evaluate FORMS every PERIOD"
   (declare (ignorable options))
-  (let* ((title (or (get-title-from options)
-                    (format nil "~A" name)))
-         (menu-name (get-menu-from options))
-         (menu-form (when menu-name
-                      `(make-menu ',menu-name)))
+  (let* ((title         (or (get-title-from options)
+                            (format nil "~A" name)))
+         (menu-name     (get-menu-from options))
          (workers-forms (get-workers-from options)))
     `(progn
        (defclass ,name (base-plugin)
@@ -209,41 +202,53 @@
        (pushnew ',name *available-plugins*)
 
        (defmethod initialize-plugin :after ((plugin ,name))
-         ;; Here we need to bind *plugin* variable to make
-         ;; it avalable during menu items creation so
-         ;; that they be able to keep track which plugin
-         ;; do they belong.
+         ;; Bind *plugin* so that menu item constructors and defmenu
+         ;; forms can capture the correct plugin instance.
          (let ((*plugin* plugin))
-           (setf (get-status-item plugin)
-                 (make-instance 'barista/classes:status-item
-                                :title ,title
-                                :menu ,menu-form))
+           ;; Build the menu-thunk: a closure that constructs the NSMenu
+           ;; on demand each time the status item is clicked.
+           (let ((menu-thunk ,(if menu-name
+                                  `(let ((mn ',menu-name))
+                                     (lambda () (make-menu mn)))
+                                  `nil)))
+             (setf (get-status-item plugin)
+                   (make-instance 'barista/classes:status-item
+                                  :title ,title
+                                  :menu-thunk menu-thunk))
+             ;; Wire up the AppKit NSStatusItem (must be on main thread;
+             ;; start-plugin already ensures this via on-main-thread).
+             (initialize-status-item (get-status-item plugin)))
            (setf (get-threads plugin)
                  (list ,@workers-forms)))))))
 
 
+;;; ---- get-menu / set-menu (plugin-level accessors) -----------------------
+
 (defmethod get-menu ((self base-plugin))
-  (barista/classes:get-menu
-   (get-status-item *plugin*)))
+  "Return the menu-thunk of the plugin's status item."
+  (barista/classes:get-menu-thunk (get-status-item *plugin*)))
+
+(defmethod (setf get-menu) (new-menu-thunk (self base-plugin))
+  "Replace the menu-thunk on the plugin's status item.
+  NEW-MENU-THUNK should be a nullary function returning an NSMenu pointer,
+  or an NSMenu CFFI pointer directly (wrapped into a thunk automatically)."
+  (let ((thunk (if (functionp new-menu-thunk)
+                   new-menu-thunk
+                   (let ((m new-menu-thunk))
+                     (lambda () m)))))
+    (setf (barista/classes:get-menu-thunk (get-status-item *plugin*))
+          thunk)))
 
 
-(defmethod (setf get-menu) (new-menu (self base-plugin))
-  (setf (barista/classes:get-menu
-         (get-status-item *plugin*))
-        new-menu))
-
+;;; ---- replace-menu --------------------------------------------------------
 
 (defun %replace-menu (from to)
   (declare (ignorable from))
-  ;; TODO: Сделать замену вложенных menu (как-то)
   (unless *plugin*
-    (error "Function replace-menu should be called when *plugin* variable is defined."))
-  (let ((old-menu (barista/classes:get-menu (get-status-item *plugin*))))
-    (declare (ignorable old-menu))
-    ;; TODO: add a check that menu has the same name as `from'
-    (setf (barista/classes:get-menu (get-status-item *plugin*))
-          (make-menu to))))
-
+    (error "replace-menu must be called when *plugin* is bound."))
+  (let ((mn to))
+    (setf (barista/classes:get-menu-thunk (get-status-item *plugin*))
+          (lambda () (make-menu mn)))))
 
 (defmacro replace-menu (from to)
   (check-type from symbol)
@@ -251,21 +256,14 @@
   `(%replace-menu ',from ',to))
 
 
+;;; ---- with-plugin (debugging helper) -------------------------------------
+
 (defmacro with-plugin (name &body body)
-  "Runs body with barista/vars:*plugin* bound to the named plugin.
-
-   This macro is useful for debugging, for example, when you need
-   to run your `update` function the same way, like barista is
-   running it on schedule. Or to simulate a click on the menu.
-
-   Argument name is not evaluated and considered a symbol, used in the
-   `defplugin' call."
+  "Run BODY with barista/vars:*plugin* bound to the named running plugin.
+  Useful for interactive debugging."
   (check-type name symbol)
-
   `(let ((*plugin*
-           (getf barista/plugin::*running-plugins*
-                 ',name)))
+           (getf barista/plugin::*running-plugins* ',name)))
      (unless *plugin*
-       (error "Plugin ~A is not running, start it with `start-plugin` call."
-              name))
+       (error "Plugin ~A is not running; start it with start-plugin first." ',name))
      ,@body))

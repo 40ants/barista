@@ -1,7 +1,23 @@
 (asdf:defsystem "barista"
+  :description "macOS menu-bar application framework in Common Lisp (SBCL/CFFI)"
   :class :package-inferred-system
-  :depends-on ("barista/main")
-  
+  :defsystem-depends-on ()
+  :depends-on ("barista/main"
+               ;; Explicit system-level deps that package-inferred-system
+               ;; cannot discover from :import-from forms alone.
+               "cffi"
+               "trivial-main-thread"
+               "bordeaux-threads"
+               "log4cl"
+               "log4cl-extras"
+               "cl-colors"
+               "alexandria"
+               "fmt"
+               "local-time"
+               "local-time-duration"
+               "uiop"
+               "swank"
+               "slynk")
   :build-operation "program-op"
   :build-pathname "barista"
   :entry-point "barista/main::main")
