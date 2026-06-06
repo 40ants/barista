@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache Roswell
+        uses: actions/cache@v4
+        with:
+          path: ~/.roswell
+          key: ${{ runner.os }}-roswell-${{ hashFiles('**/build.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-roswell-
+
+      - name: Install Roswell
+        run: brew install roswell && ros setup
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Install qlot
+        run: ros install qlot
+
+      - name: Cache qlot dependencies
+        uses: actions/cache@v4
+        with:
+          path: .qlot
+          key: ${{ runner.os }}-qlot-${{ hashFiles('qlfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-qlot-
+
+      - name: Build Barista.app
+        run: ./build.sh
+
+      - name: Sign with ad-hoc signature
+        run: codesign --deep --force --sign - dist/Barista.app
+
+      - name: Create DMG
+        run: |
+          version="${GITHUB_REF#refs/tags/v}"
+          create-dmg \
+            --volname "Barista" \
+            --volicon "dist/Barista.app/Contents/Resources/Barista.icns" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Barista.app" 175 220 \
+            --app-drop-link 425 220 \
+            --skip-jenkins \
+            "Barista-${version}.dmg" \
+            "dist/Barista.app"
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Barista ${{ github.ref_name }}
+          files: Barista-${{ github.ref_name }}.dmg
+          generate_release_notes: true
+          body: |
+            ## Barista ${{ github.ref_name }}
+
+            Download the DMG file below and drag Barista to your Applications folder.
