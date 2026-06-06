@@ -21,3 +21,8 @@
   :build-operation "program-op"
   :build-pathname "barista"
   :entry-point "barista/main::main")
+
+#+sb-core-compression
+(defmethod asdf:perform ((o asdf:image-op) (c (eql (asdf:find-system "barista"))))
+  (uiop:dump-image (asdf:output-file o c) :executable t :compression t))
+

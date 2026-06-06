@@ -1,0 +1,5 @@
+# project system-file system-name [dependency1..dependencyN]
+cl-ppcre cl-ppcre cl-ppcre asdf
+cl-ppcre cl-ppcre-unicode cl-ppcre-unicode asdf cl-ppcre cl-unicode
+cl-ppcre cl-ppcre-unicode cl-ppcre-unicode/test cl-ppcre cl-ppcre-unicode flexi-streams
+cl-ppcre cl-ppcre cl-ppcre/test cl-ppcre flexi-streams

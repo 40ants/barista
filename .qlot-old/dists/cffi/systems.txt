@@ -1,0 +1,11 @@
+# project system-file system-name [dependency1..dependencyN]
+cffi cffi cffi alexandria asdf babel trivial-features
+cffi cffi-examples cffi-examples asdf cffi
+cffi cffi-grovel cffi-grovel alexandria asdf cffi cffi-toolchain uiop
+cffi cffi-libffi cffi-libffi asdf cffi cffi-grovel trivial-features
+cffi cffi-tests cffi-tests asdf bordeaux-threads cffi-grovel cffi-libffi rt trivial-features uiop
+cffi cffi-tests cffi-tests/example cffi-grovel
+cffi cffi-toolchain cffi-toolchain asdf cffi
+cffi cffi-uffi-compat cffi-uffi-compat asdf cffi
+cffi cffi cffi/c2ffi alexandria cffi uiop
+cffi cffi cffi/c2ffi-generator alexandria cffi cl-json cl-ppcre uiop

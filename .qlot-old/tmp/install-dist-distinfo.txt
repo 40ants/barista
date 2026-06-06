@@ -1,0 +1,6 @@
+name: cffi
+version: ql-2026-01-01
+distinfo-subscription-url: qlot://localhost/cffi.txt
+canonical-distinfo-url: qlot://localhost/cffi.txt
+release-index-url: qlot://localhost/cffi/ql-2026-01-01/releases.txt
+system-index-url: qlot://localhost/cffi/ql-2026-01-01/systems.txt

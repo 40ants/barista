@@ -1,0 +1,6 @@
+name: cl-ppcre
+version: ql-2025-06-22
+distinfo-subscription-url: qlot://localhost/cl-ppcre.txt
+canonical-distinfo-url: qlot://localhost/cl-ppcre.txt
+release-index-url: qlot://localhost/cl-ppcre/ql-2025-06-22/releases.txt
+system-index-url: qlot://localhost/cl-ppcre/ql-2025-06-22/systems.txt

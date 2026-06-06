@@ -1,0 +1,4 @@
+# project system-file system-name [dependency1..dependencyN]
+local-time cl-postgres+local-time cl-postgres+local-time asdf cl-postgres local-time
+local-time local-time local-time asdf uiop
+local-time local-time local-time/test fiasco local-time

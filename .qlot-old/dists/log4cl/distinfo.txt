@@ -1,0 +1,6 @@
+name: log4cl
+version: ql-2023-06-18
+distinfo-subscription-url: qlot://localhost/log4cl.txt
+canonical-distinfo-url: qlot://localhost/log4cl.txt
+release-index-url: qlot://localhost/log4cl/ql-2023-06-18/releases.txt
+system-index-url: qlot://localhost/log4cl/ql-2023-06-18/systems.txt

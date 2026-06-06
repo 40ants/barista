@@ -1,0 +1,2 @@
+# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
+log4cl-extras http://beta.quicklisp.org/archive/log4cl-extras/2026-01-01/log4cl-extras-20260101-git.tgz 30156 14349965705a8acd04137265febae91f a8f37df2a05727f89246a6f19afeb640fb9df1ac log4cl-extras-20260101-git log4cl-extras-test.asd log4cl-extras.asd

@@ -27,13 +27,12 @@ if [ ! -d ".qlot" ]; then
   qlot install
 fi
 
-# ---- 2. Build SBCL executable image ---------------------------------------
-# ros dump executable always writes the output as 'app' (the script name
-# without extension), then we rename it to the desired executable name.
+# ---- 2. Build SBCL executable image via ASDF -------------------------------
+# ASDF build creates a clean executable without linker-signed signature
+# (avoiding the conflict with codesign that ros dump has).
 echo "==> Building SBCL executable..."
-rm -f app "$EXECUTABLE_NAME"
-qlot exec ros -L $LISP dump executable app.ros
-mv app "$EXECUTABLE_NAME"
+rm -f barista
+qlot exec ros run -L $LISP -e '(asdf:make :barista)'
 
 # ---- 3. Create .app bundle ------------------------------------------------
 echo "==> Creating $APP_NAME.app bundle..."

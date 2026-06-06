@@ -1,0 +1,7 @@
+name: ultralisp
+version: 20260604174500
+distinfo-subscription-url: http://dist.ultralisp.org/ultralisp.txt
+distinfo-template-url: http://dist.ultralisp.org/ultralisp/{{version}}/distinfo.txt
+release-index-url: http://dist.ultralisp.org/ultralisp/20260604174500/releases.txt
+system-index-url: http://dist.ultralisp.org/ultralisp/20260604174500/systems.txt
+canonical-distinfo-url: http://dist.ultralisp.org/ultralisp/20260604174500/distinfo.txt

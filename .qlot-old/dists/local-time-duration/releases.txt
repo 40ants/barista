@@ -1,0 +1,2 @@
+# project url size file-md5 content-sha1 prefix [system-file1..system-fileN]
+local-time-duration http://beta.quicklisp.org/archive/local-time-duration/2018-04-30/local-time-duration-20180430-git.tgz 10333 8ad2f86ea33d4c7b3014e2152632b88c 0b443efd31c990ad022e9c16576bf68b2359de0b local-time-duration-20180430-git cl-postgres+local-time-duration.asd local-time-duration.asd
