@@ -7,6 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @prompts/repl-driven-development.md
 @agents/common-lisp-expert.md
 
+## Lessons Learned
+
+`lessons-learned.md` содержит разобранные ошибки и неочевидные решения, найденные в ходе разработки этого проекта.
+
+**Читай его в начале каждой сессии** — особенно перед работой с ObjC-мостом, GCD, плагинной системой или сборкой.
+
+**Дополняй по окончании сессии**: если обнаружена новая нетривиальная проблема или найдено неочевидное решение — добавь запись в формате, уже используемом в файле (Контекст / Проблема / Решение / Усвоенный урок).
+
 ## Project Overview
 
 cl-mcp is a Model Context Protocol (MCP) server for Common Lisp, providing JSON-RPC 2.0 over stdio/TCP/HTTP. It enables AI agents to interact with Common Lisp environments through structured tools for REPL evaluation, file operations, code introspection, and structure-aware editing.
