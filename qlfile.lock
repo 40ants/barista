@@ -66,10 +66,6 @@
  (:class qlot/source/ql:source-ql
   :initargs (:%version :latest)
   :version "ql-2025-06-22"))
-("priority-queue" .
- (:class qlot/source/ql:source-ql
-  :initargs (:%version :latest)
-  :version "ql-2015-07-09"))
 ("cl-strings" .
  (:class qlot/source/ql:source-ql
   :initargs (:%version :latest)
