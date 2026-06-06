@@ -1,6 +1,7 @@
 (defpackage #:barista/objc
   (:use #:cl)
   (:import-from #:cffi)
+  (:import-from #:bordeaux-threads)
   (:export
    ;; framework loading
    #:load-objc-frameworks
@@ -16,6 +17,8 @@
    #:send
    ;; common patterns
    #:alloc-init
+   ;; main-thread dispatch via GCD
+   #:call-on-main-thread
    ;; NSString bridge
    #:ns-str
    #:lisp-str
@@ -30,6 +33,10 @@
   (:darwin "/usr/lib/libobjc.A.dylib")
   (t (:default "objc")))
 
+(cffi:define-foreign-library libdispatch
+  (:darwin "/usr/lib/system/libdispatch.dylib")
+  (t (:default "dispatch")))
+
 (cffi:define-foreign-library foundation
   (:darwin (:framework "Foundation")))
 
@@ -37,9 +44,10 @@
   (:darwin (:framework "AppKit")))
 
 (defun load-objc-frameworks ()
-  "Load the ObjC runtime, Foundation, and AppKit.
+  "Load the ObjC runtime, libdispatch, Foundation, and AppKit.
   Safe to call multiple times; already-loaded libraries are skipped."
   (cffi:load-foreign-library 'libobjc)
+  (cffi:load-foreign-library 'libdispatch)
   (cffi:load-foreign-library 'foundation)
   (cffi:load-foreign-library 'appkit))
 
@@ -109,6 +117,63 @@
                                      :pointer)))
       (when (and ptr (not (cffi:null-pointer-p ptr)))
         (cffi:foreign-string-to-lisp ptr)))))
+
+
+;;; ---- Grand Central Dispatch: main-thread delivery -----------------------
+;;;
+;;; trivial-main-thread's task-queue approach does not work when the main
+;;; thread is blocked inside [NSApp run].  Instead we use GCD's main queue,
+;;; which AppKit drains on every run-loop iteration.
+;;;
+;;; dispatch_get_main_queue() in C headers is a macro that expands to
+;;; &_dispatch_main_q -- a global variable exported from libdispatch.
+;;; We bind it as a foreign variable and take its address.
+;;;
+;;; dispatch_async_f takes a plain C function + void* context, avoiding
+;;; the need to construct ObjC block structs.
+
+(defun %dispatch-get-main-queue ()
+  "Return a pointer to the GCD main queue.
+  dispatch_get_main_queue() in C is a macro for &_dispatch_main_q."
+  (cffi:foreign-symbol-pointer "_dispatch_main_q"))
+
+(cffi:defcfun ("dispatch_async_f" %dispatch-async-f) :void
+  (queue    :pointer)
+  (context  :pointer)
+  (work     :pointer))
+
+;;; We keep a global table of pending thunks so the GC cannot collect them
+;;; before the main thread runs them.
+(defvar *dispatch-thunks* (make-hash-table)
+  "Maps integer key -> CL thunk, keeping thunks alive until GCD fires them.")
+(defvar *dispatch-thunk-lock* (bordeaux-threads:make-lock "dispatch-thunk-lock"))
+(defvar *dispatch-thunk-counter* 0)
+
+(cffi:defcallback %dispatch-invoke :void ((ctx :pointer))
+  "C function passed to dispatch_async_f; ctx encodes the thunk table key."
+  (let* ((key (cffi:pointer-address ctx))
+         (fn  (bordeaux-threads:with-lock-held (*dispatch-thunk-lock*)
+                (prog1 (gethash key *dispatch-thunks*)
+                  (remhash key *dispatch-thunks*)))))
+    (when fn
+      (handler-case (funcall fn)
+        (error (e)
+          (format *error-output* "~&[barista] dispatch error: ~a~%" e))))))
+
+(defun call-on-main-thread (thunk)
+  "Schedule THUNK to run on the AppKit main thread via GCD.
+  Returns immediately; THUNK runs asynchronously on the next run-loop turn.
+  Safe to call from any thread, including the main thread itself."
+  (let* ((key (bordeaux-threads:with-lock-held (*dispatch-thunk-lock*)
+                (let ((k (incf *dispatch-thunk-counter*)))
+                  (setf (gethash k *dispatch-thunks*) thunk)
+                  k)))
+         ;; Encode the key as a pointer-sized integer context value.
+         ;; We never dereference this pointer; it is only used as a unique key.
+         (ctx (cffi:make-pointer key)))
+    (%dispatch-async-f (%dispatch-get-main-queue)
+                       ctx
+                       (cffi:callback %dispatch-invoke))))
 
 
 ;;; ---- NSRect (CGRect) helpers ---------------------------------------------

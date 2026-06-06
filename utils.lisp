@@ -5,7 +5,8 @@
   (:import-from #:local-time-duration
                 #:duration-as)
   (:import-from #:bordeaux-threads)
-  (:import-from #:trivial-main-thread)
+  (:import-from #:barista/objc
+                #:call-on-main-thread)
   (:export #:format-duration
            #:open-url
            #:on-main-thread))
@@ -75,8 +76,6 @@
 
 
 (defmacro on-main-thread (&rest actions)
-  "Execute ACTIONS on the AppKit main thread (thread 0).
-  Uses trivial-main-thread:call-in-main-thread so that AppKit objects
-  can be safely mutated from plugin worker threads."
-  `(trivial-main-thread:call-in-main-thread
-    (lambda () ,@actions)))
+  "Schedule ACTIONS to run on the AppKit main thread via GCD.
+  Returns immediately (fire-and-forget).  Safe to call from any thread."
+  `(call-on-main-thread (lambda () ,@actions)))

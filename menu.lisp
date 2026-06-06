@@ -56,9 +56,12 @@
 (cffi:defcallback %barista-action-cb :void
     ((self :pointer) (cmd :pointer) (sender :pointer))
   (declare (ignore self cmd))
+  ;; sender is the NSMenuItem. Look up the CL closure and call it.
+  ;; The closure accepts zero arguments (all plugin callbacks use f_% or
+  ;; similar wrappers); the sender pointer is available via closure if needed.
   (let ((fn (gethash (cffi:pointer-address sender) *action-callbacks*)))
     (when fn
-      (handler-case (funcall fn)
+      (handler-case (funcall fn sender)
         (error (e)
           (log:error "Menu item callback error: ~A" e))))))
 
@@ -231,14 +234,16 @@
 
     (when callback
       ;; Capture *plugin* into the closure so callbacks always know their plugin.
-      (let ((target   (ensure-action-target))
+      ;; The stored thunk accepts the NSMenuItem sender pointer as its argument,
+      ;; matching the old LispWorks behaviour where callbacks received the item.
+      (let ((target          (ensure-action-target))
             (captured-plugin *plugin*)
-            (cb callback))
+            (cb              callback))
         (send ns-item "setTarget:" :pointer target :void)
         (setf (gethash (cffi:pointer-address ns-item) *action-callbacks*)
-              (lambda ()
+              (lambda (sender)
                 (let ((*plugin* captured-plugin))
-                  (funcall cb))))))
+                  (funcall cb sender))))))
 
     (when submenu
       (send ns-item "setSubmenu:" :pointer (make-menu submenu) :void))

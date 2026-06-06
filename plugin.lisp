@@ -206,11 +206,16 @@
          ;; forms can capture the correct plugin instance.
          (let ((*plugin* plugin))
            ;; Build the menu-thunk: a closure that constructs the NSMenu
-           ;; on demand each time the status item is clicked.
-           (let ((menu-thunk ,(if menu-name
-                                  `(let ((mn ',menu-name))
-                                     (lambda () (make-menu mn)))
-                                  `nil)))
+            ;; on demand each time the status item is clicked.
+            ;; *plugin* must be rebound inside the thunk because it runs
+            ;; on the AppKit main thread where *plugin* is otherwise NIL.
+            (let ((menu-thunk ,(if menu-name
+                                   `(let ((mn ',menu-name)
+                                          (p  plugin))
+                                      (lambda ()
+                                        (let ((*plugin* p))
+                                          (make-menu mn))))
+                                   `nil)))
              (setf (get-status-item plugin)
                    (make-instance 'barista/classes:status-item
                                   :title ,title
@@ -246,9 +251,12 @@
   (declare (ignorable from))
   (unless *plugin*
     (error "replace-menu must be called when *plugin* is bound."))
-  (let ((mn to))
+  (let ((mn to)
+        (p  *plugin*))
     (setf (barista/classes:get-menu-thunk (get-status-item *plugin*))
-          (lambda () (make-menu mn)))))
+          (lambda ()
+            (let ((*plugin* p))
+              (make-menu mn))))))
 
 (defmacro replace-menu (from to)
   (check-type from symbol)

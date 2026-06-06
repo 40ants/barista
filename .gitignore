@@ -1,5 +1,6 @@
 /.qlot/
 /.DS_Store
 /Barista.app/
-
-
+/dist/
+/app
+/barista

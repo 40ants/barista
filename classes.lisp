@@ -4,13 +4,13 @@
   (:import-from #:cffi)
   (:import-from #:cl-colors)
   (:import-from #:alexandria)
-  (:import-from #:trivial-main-thread)
   (:import-from #:barista/objc
                 #:send
                 #:%cls
                 #:ns-str
                 #:lisp-str
-                #:alloc-init)
+                #:alloc-init
+                #:call-on-main-thread)
   (:import-from #:barista/vars
                 #:+supported-colors+
                 #:+default-font-size+)
@@ -79,7 +79,7 @@
   (:method (value (item status-item))
     (let ((ns-item (get-ns-status-item item)))
       (when ns-item
-        (trivial-main-thread:call-in-main-thread
+        (call-on-main-thread
          (lambda ()
            (cond
              ;; NSAttributedString pointer -- use setAttributedTitle:
