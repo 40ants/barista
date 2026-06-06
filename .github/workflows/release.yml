@@ -38,6 +38,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-qlot-
 
+      - name: Add Roswell bin to PATH
+        run: echo "$HOME/.roswell/bin" >> $GITHUB_PATH
+
       - name: Build Barista.app
         run: ./build.sh
 
