@@ -10,7 +10,7 @@ ql alexandria
 ql fmt
 ql local-time
 ql local-time-duration
-ql swank
+ql swank-protocol
 ql f-underscore
 ql function-cache
 ql cl-fad
