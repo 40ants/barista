@@ -32,7 +32,7 @@ fi
 # (avoiding the conflict with codesign that ros dump has).
 echo "==> Building SBCL executable..."
 rm -f barista
-qlot exec ros run -L $LISP -e '(asdf:make :barista)'
+qlot exec ros run -L $LISP -e '(ql:quickload :barista)' -e '(asdf:make :barista)'
 
 # ---- 3. Create .app bundle ------------------------------------------------
 echo "==> Creating $APP_NAME.app bundle..."
