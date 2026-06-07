@@ -2,7 +2,9 @@
   (:use #:cl)
   (:import-from #:swank)
   (:import-from #:slynk)
+  (:import-from #:40ants-logging)
   (:import-from #:trivial-main-thread)
+  (:import-from #:defmain)
   (:import-from #:barista/objc
                 #:load-objc-frameworks
                 #:send
@@ -44,30 +46,44 @@
         (barista/plugin:running-plugins)))
 
 
-(defun main (&key (swank nil) (slynk nil) (port 5007))
+
+(defmain:defmain (main :program-name "barista") ((slynk-port "Port to listen for SLYNK connection on."
+                                                             :short nil)
+                                                 (swank-port "Port to listen for SWANK connection on."
+                                                             :short nil)
+                                                 (log-file "Output logs to this file")
+                                                 (verbose "Show debug logs"
+                                                          :flag t))
   "Start the Barista menu-bar application.
 
   Loads user plugins, initialises AppKit on macOS thread 0 via
   trivial-main-thread, and enters the AppKit event loop (never returns
-  normally).
+  normally)."
 
-  Keyword arguments:
-    :swank  -- when true, start a SWANK server on PORT (default 5007)
-    :slynk  -- when true, start a SLYNK server on PORT (default 5007)
-    :port   -- port number for the SWANK/SLYNK server"
-  (log4cl-extras/config:setup
-   '(:level :debug
-     :appenders ((file
-                  :file "/tmp/barista.log"
-                  :layout :plain))))
+  (let ((log-level (if verbose
+                     :debug
+                     :info)))
+    (cond
+      (log-file
+       (40ants-logging:setup-for-backend :level log-level
+                                         :filename log-file))
+      (t
+       (40ants-logging:setup-for-cli :level log-level))))
+  
 
-  (when swank
-    (log:info "Starting SWANK server on port ~A" port)
-    (swank:create-server :port port :dont-close t :style :spawn))
+  (log:info "Starting Barista")
+  
+  (when swank-port
+    (log:info "Starting SWANK server on port ~A" swank-port)
+    (swank:create-server :port (parse-integer swank-port :junk-allowed t)
+                         :dont-close t
+                         :style :spawn))
 
-  (when slynk
-    (log:info "Starting SLYNK server on port ~A" port)
-    (slynk:create-server :port port :dont-close t :style :spawn))
+  (when slynk-port
+    (log:info "Starting SLYNK server on port ~A" slynk-port)
+    (slynk:create-server :port (parse-integer slynk-port :junk-allowed t)
+                         :dont-close t
+                         :style :spawn))
 
   (load-plugins)
 

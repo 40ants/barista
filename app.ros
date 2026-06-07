@@ -9,25 +9,9 @@ exec ros -Q -- $0 "$@"
   #+quicklisp (ql:quickload :barista-plugins :silent t))
 
 (defpackage :ros.script.barista.main
-  (:use :cl))
+  (:use :cl)
+  (:import-from #:barista/main
+                #:main))
 (in-package :ros.script.barista.main)
 
-(defun main (&rest argv)
-  "Entry point. Supported flags:
-   --slynk         start a SLYNK server (for SLY)
-   --swank         start a SWANK server (for SLIME)
-   --port <N>      port for the REPL server (default: 5007)"
-  (let ((slynk nil)
-        (swank nil)
-        (port  5007)
-        (args  argv))
-    (loop while args do
-      (let ((arg (pop args)))
-        (cond
-          ((string= arg "--slynk") (setf slynk t))
-          ((string= arg "--swank") (setf swank t))
-          ((string= arg "--port")
-           (let ((p (pop args)))
-             (when p (setf port (parse-integer p :junk-allowed t))))))))
-    (barista/main:main :slynk slynk :swank swank :port port)))
 ;;; vim: set ft=lisp lisp:
