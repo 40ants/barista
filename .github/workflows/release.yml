@@ -73,6 +73,8 @@ jobs:
             "dist/Barista.app"
 
       - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           version="${GITHUB_REF#refs/tags/v}"
           gh release create "${GITHUB_REF#refs/tags/}" \
