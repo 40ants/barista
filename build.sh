@@ -30,7 +30,13 @@ fi
 # ---- 2. Build SBCL executable image via ASDF -------------------------------
 echo "==> Building SBCL executable..."
 rm -f barista
-qlot exec ros run -L $LISP -e '(ql:quickload :barista)' -e '(asdf:make :barista)'
+# Here we first load Barista with all dependencies.
+# Then we load all built-in plugins.
+# And finally we build a binary.
+qlot exec ros run -L $LISP \
+     -e '(ql:quickload :barista)' \
+     -e '(ql:quickload :barista-plugins)' \
+     -e '(asdf:make :barista)'
 
 # ---- 3. Create .app bundle ------------------------------------------------
 echo "==> Creating $APP_NAME.app bundle..."
