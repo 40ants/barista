@@ -69,7 +69,7 @@
        (if (> seconds 0)
            (setf (get-title *plugin*)
                  new-title)
-           (stop *plugin*))))))
+           (stop))))))
 
 
 (defmenu start-submenu
