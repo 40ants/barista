@@ -73,12 +73,9 @@ jobs:
             "dist/Barista.app"
 
       - name: GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Barista ${{ github.ref_name }}
-          files: Barista-${{ github.ref_name }}.dmg
-          generate_release_notes: true
-          body: |
-            ## Barista ${{ github.ref_name }}
-
-            Download the DMG file below and drag Barista to your Applications folder.
+        run: |
+          version="${GITHUB_REF#refs/tags/v}"
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            "Barista-${version}.dmg" \
+            --title "Barista ${GITHUB_REF#refs/tags/}" \
+            --notes "Download the DMG file below and drag Barista to your Applications folder."
