@@ -206,16 +206,16 @@
          ;; forms can capture the correct plugin instance.
          (let ((*plugin* plugin))
            ;; Build the menu-thunk: a closure that constructs the NSMenu
-            ;; on demand each time the status item is clicked.
-            ;; *plugin* must be rebound inside the thunk because it runs
-            ;; on the AppKit main thread where *plugin* is otherwise NIL.
-            (let ((menu-thunk ,(if menu-name
-                                   `(let ((mn ',menu-name)
-                                          (p  plugin))
-                                      (lambda ()
-                                        (let ((*plugin* p))
-                                          (make-menu mn))))
-                                   `nil)))
+           ;; on demand each time the status item is clicked.
+           ;; *plugin* must be rebound inside the thunk because it runs
+           ;; on the AppKit main thread where *plugin* is otherwise NIL.
+           (let ((menu-thunk ,(if menu-name
+                                `(let ((mn ',menu-name)
+                                       (p  plugin))
+                                   (lambda ()
+                                     (let ((*plugin* p))
+                                       (make-menu mn))))
+                                `nil)))
              (setf (get-status-item plugin)
                    (make-instance 'barista/classes:status-item
                                   :title ,title
