@@ -42,8 +42,8 @@
 (in-package #:barista/plugin)
 
 
-(defvar *running-plugins* nil
-  "A plist of running plugins where key is a symbol of the class name
+(defvar *running-plugins* (make-hash-table)
+  "A hash-table of running plugins where key is a symbol of the class name
   and value is an instance of this class.")
 
 (defvar *available-plugins* nil
@@ -80,11 +80,11 @@
         value))
 
 (defun running-plugins ()
-  (loop for name in *running-plugins* by #'cddr
+  (loop for name being the hash-keys of *running-plugins*
         collect name))
 
 (defun get-plugin-instance (class-name)
-  (getf *running-plugins* class-name))
+  (gethash class-name *running-plugins*))
 
 (defun is-plugin-running (class-name)
   (not (null (get-plugin-instance class-name))))
@@ -93,27 +93,34 @@
 (defun stop-threads (plugin)
   (loop for thread in (get-threads plugin)
         do (log:info "Stopping thread ~A" thread)
-           (bordeaux-threads:destroy-thread thread)))
+           (when (bordeaux-threads:thread-alive-p thread)
+             (handler-case (bordeaux-threads:destroy-thread thread)
+               (error (e)
+                 (log:warn "Error destroying thread ~A: ~A" thread e))))))
 
+
+(defun %stop-plugin-sync (plugin)
+  "Stop PLUGIN synchronously.  Must be called on the AppKit main thread."
+  (stop-threads plugin)
+  (when (get-status-item plugin)
+    (hide (get-status-item plugin)))
+  (remhash (class-name (class-of plugin)) *running-plugins*))
 
 (defgeneric stop-plugin (plugin)
+  (:documentation "Stop PLUGIN, dispatching to the AppKit main thread via GCD.")
   (:method ((plugin symbol))
     (on-main-thread
       (let ((obj (get-plugin-instance plugin)))
         (when obj
-          (stop-plugin obj)))))
+          (%stop-plugin-sync obj)))))
   (:method ((plugin base-plugin))
     (on-main-thread
-      (stop-threads plugin)
-      (when (get-status-item plugin)
-        (hide (get-status-item plugin)))
-      (setf (getf *running-plugins* (class-name (class-of plugin)))
-            nil))))
+      (%stop-plugin-sync plugin))))
 
 
 (defgeneric initialize-plugin (plugin)
   (:method ((plugin base-plugin))
-    (setf (getf *running-plugins* (class-name (class-of plugin)))
+    (setf (gethash (class-name (class-of plugin)) *running-plugins*)
           plugin)))
 
 
@@ -330,7 +337,7 @@
   Useful for interactive debugging."
   (check-type name symbol)
   `(let ((*plugin*
-           (getf barista/plugin::*running-plugins* ',name)))
+           (gethash ',name barista/plugin::*running-plugins*)))
      (unless *plugin*
        (error "Plugin ~A is not running; start it with start-plugin first." ',name))
      ,@body))

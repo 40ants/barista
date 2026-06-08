@@ -12,14 +12,10 @@
                 #:add-item)
   (:import-from #:barista/plugin
                 #:get-available-plugins
-                #:start-plugin
-                #:stop-plugin
                 #:running-plugins)
   (:import-from #:barista/config
                 #:plugin-enabled-p
                 #:set-plugin-enabled)
-  (:import-from #:barista/objc
-                #:call-on-main-thread)
 
   (:export
    #:ensure-system-plugin
@@ -91,19 +87,19 @@
 
 (defun toggle-plugin (plugin-name)
   "Toggle the enabled state of PLUGIN-NAME, persisting to config,
-  and start/stop the plugin as appropriate.
-  After toggling, schedule a visibility update on the main thread so it
-  runs after the stop/start operations (which are also GCD-dispatched)."
+  and start/stop the plugin synchronously.
+  Called from a menu callback, so we are already on the AppKit main thread;
+  we call the sync variants directly to ensure *running-plugins* is up to
+  date before update-system-plugin-visibility checks it."
   (let ((currently-enabled (plugin-enabled-p plugin-name)))
     (log:info "Toggling plugin ~A (currently enabled=~A)" plugin-name currently-enabled)
     (set-plugin-enabled plugin-name (not currently-enabled))
     (if currently-enabled
-        (stop-plugin plugin-name)
-        (start-plugin plugin-name)))
-  ;; Defer visibility check: stop-plugin/start-plugin dispatch via GCD
-  ;; (on-main-thread), so we schedule update-system-plugin-visibility to
-  ;; run after them by posting another GCD block.
-  (call-on-main-thread #'update-system-plugin-visibility))
+        (let ((obj (barista/plugin:get-plugin-instance plugin-name)))
+          (when obj
+            (barista/plugin::%stop-plugin-sync obj)))
+        (barista/plugin::%start-plugin-sync plugin-name)))
+  (update-system-plugin-visibility))
 
 
 ;;; ---- Visibility management -----------------------------------------------
