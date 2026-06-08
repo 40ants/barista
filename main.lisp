@@ -12,7 +12,12 @@
   (:import-from #:barista/menu)
   (:import-from #:barista/plugin
                 #:get-available-plugins
-                #:start-plugin)
+                #:start-plugin
+                #:start-enabled-plugins)
+  (:import-from #:barista/config
+                #:restore-config)
+  (:import-from #:barista/system-plugin
+                #:ensure-system-plugin)
   (:import-from #:log4cl-extras/config)
   (:export
    #:load-plugins
@@ -34,8 +39,9 @@
       (mapc #'load-plugin (uiop:directory-files dir)))))
 
 (defun start-plugins ()
-  "Instantiate and start all registered plugins.
-  Must be called on the AppKit main thread."
+  "Instantiate and start all registered plugins regardless of config.
+  Must be called on the AppKit main thread.
+  NOTE: Prefer start-enabled-plugins for normal startup."
   (log:info "Starting ~A plugin(s)" (length (get-available-plugins)))
   (mapc #'start-plugin (get-available-plugins)))
 
@@ -69,10 +75,9 @@
                                          :filename log-file))
       (t
        (40ants-logging:setup-for-cli :level log-level))))
-  
 
   (log:info "Starting Barista")
-  
+
   (when swank-port
     (log:info "Starting SWANK server on port ~A" swank-port)
     (swank:create-server :port (parse-integer swank-port :junk-allowed t)
@@ -84,6 +89,10 @@
     (slynk:create-server :port (parse-integer slynk-port :junk-allowed t)
                          :dont-close t
                          :style :spawn))
+
+  ;; Load configuration before plugins so plugin-enabled-p is available
+  ;; when start-enabled-plugins runs.
+  (restore-config)
 
   (load-plugins)
 
@@ -107,9 +116,15 @@
         ;; NSApplicationActivationPolicyAccessory = 1
         (send app "setActivationPolicy:" :long 1 :void)
 
-        ;; Instantiate all plugins and create their NSStatusItems.
-        (log:info "Starting plugins")
-        (start-plugins)
+        ;; Start only plugins enabled in the configuration.
+        ;; On first run (no config file) no plugins are enabled,
+        ;; so the system plugin will be shown instead.
+        (log:info "Starting enabled plugins")
+        (start-enabled-plugins)
+
+        ;; Show the system plugin if no user plugins are running.
+        (log:info "Checking system plugin visibility")
+        (ensure-system-plugin)
 
         ;; Enter the AppKit event loop -- this call never returns.
         (log:info "Entering AppKit run loop")

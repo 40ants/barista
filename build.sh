@@ -47,7 +47,7 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 mv "$SCRIPT_DIR/$EXECUTABLE_NAME" "$APP_BUNDLE/Contents/MacOS/$EXECUTABLE_NAME"
 chmod +x "$APP_BUNDLE/Contents/MacOS/$EXECUTABLE_NAME"
 
-# ---- 4. Generate .icns icon -----------------------------------------------
+# ---- 4. Generate .icns icon and copy PNG for status bar -------------------
 ICON_PLIST_ENTRY=""
 if [ -f "$SCRIPT_DIR/images/icon.png" ]; then
   echo "==> Generating app icon..."
@@ -62,6 +62,8 @@ if [ -f "$SCRIPT_DIR/images/icon.png" ]; then
   done
   iconutil -c icns "$ICONSET_DIR" -o "$APP_BUNDLE/Contents/Resources/$APP_NAME.icns"
   rm -rf "$ICONSET_DIR"
+  # Also copy the raw PNG for use as the status-bar icon image.
+  cp "$SCRIPT_DIR/images/icon.png" "$APP_BUNDLE/Contents/Resources/barista-icon.png"
   ICON_PLIST_ENTRY="  <key>CFBundleIconFile</key>
   <string>$APP_NAME</string>"
 else

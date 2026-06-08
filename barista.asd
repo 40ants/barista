@@ -16,6 +16,7 @@
                "local-time"
                "local-time-duration"
                "uiop"
+               "ubiquitous"
                "swank"
                "slynk")
   :build-operation "program-op"

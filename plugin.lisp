@@ -20,21 +20,22 @@
                 #:with-fields)
   (:import-from #:log4cl-extras/error
                 #:with-log-unhandled)
-  (:export
-   #:defplugin
-   #:start-plugin
-   #:stop-plugin
-   #:restart-plugin
-   #:get-plugin-instance
-   #:is-plugin-running
-   #:get-title
-   #:replace-menu
-   #:get-available-plugins
-   #:get-menu
-   #:running-plugins
+   (:export
+    #:defplugin
+    #:start-plugin
+    #:stop-plugin
+    #:restart-plugin
+    #:get-plugin-instance
+    #:is-plugin-running
+    #:get-title
+    #:replace-menu
+    #:get-available-plugins
+    #:get-menu
+    #:running-plugins
+    #:start-enabled-plugins
 
-   #:with-plugin
-   #:restart-plugins))
+    #:with-plugin
+    #:restart-plugins))
 (in-package #:barista/plugin)
 
 
@@ -121,6 +122,19 @@
 (defun restart-plugins ()
   (mapc #'restart-plugin (running-plugins)))
 
+(defun start-enabled-plugins ()
+  "Start only the plugins that are enabled in the configuration.
+  Uses barista/config:plugin-enabled-p to check each available plugin.
+  Must be called on the AppKit main thread."
+  (let ((available (get-available-plugins)))
+    (log:info "Starting enabled plugins from ~A available" (length available))
+    (dolist (name available)
+      (if (uiop:symbol-call :barista/config :plugin-enabled-p name)
+          (progn
+            (log:info "Starting enabled plugin ~A" name)
+            (start-plugin name))
+          (log:info "Skipping disabled plugin ~A" name)))))
+
 
 ;;; ---- defplugin helper utilities ------------------------------------------
 
@@ -153,10 +167,10 @@
 (defun make-worker-form (period code)
   (multiple-value-bind (delay description)
       (get-delay-from period)
-    `(make-thread
+     `(make-thread
       (lambda ()
         (loop do
-          (ignore-errors
+          (handler-case
            (handler-bind ((error (lambda (condition)
                                    (when *debug*
                                      (invoke-debugger condition))
@@ -166,7 +180,8 @@
              (with-log-unhandled ()
                (with-fields (:plugin *plugin*)
                  ,@code))
-             (sleep ,delay)))))
+             (sleep ,delay))
+           (error ()))))
       :name (fmt nil
                  (:a *plugin*)
                  " every "
@@ -191,10 +206,10 @@
     (:menu SYMBOL)         -- name of a defmenu to show on click
     (:every PERIOD FORMS)  -- background worker: evaluate FORMS every PERIOD"
   (declare (ignorable options))
-  (let* ((title         (or (get-title-from options)
-                            (format nil "~A" name)))
-         (menu-name     (get-menu-from options))
-         (workers-forms (get-workers-from options)))
+  (let ((title         (or (get-title-from options)
+                           (format nil "~A" name)))
+        (menu-name     (get-menu-from options))
+        (workers-forms (get-workers-from options)))
     `(progn
        (defclass ,name (base-plugin)
          (,@slots))

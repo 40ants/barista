@@ -20,13 +20,14 @@
                 #:*plugin*)
   (:import-from #:barista/utils
                 #:open-url)
-  (:export
-   #:defmenu
-   #:hide
-   #:make-menu
-   #:build-menu
-   #:add-item
-   #:initialize-status-item))
+   (:export
+    #:defmenu
+    #:hide
+    #:make-menu
+    #:build-menu
+    #:add-item
+    #:initialize-status-item
+    #:initialize-status-item-with-image))
 (in-package #:barista/menu)
 
 
@@ -40,6 +41,10 @@
 
 ;; NSEventModifierFlags bit for the Option/Alt key
 (defconstant +ns-alternate-key-mask+ (expt 2 19))
+
+;; NSControlStateValue constants (NSCell.h)
+(defconstant +ns-control-state-off+ 0)
+(defconstant +ns-control-state-on+  1)
 
 
 ;;; ---- action callback dispatch (BaristaActionTarget) ----------------------
@@ -207,9 +212,10 @@
     (send menu "setAutoenablesItems:" :bool nil :void)
     menu))
 
-(defun %add-menu-item (menu title &key callback submenu url)
+(defun %add-menu-item (menu title &key callback submenu url state)
   "Add one item to NSMenu pointer MENU.
   TITLE may be a plain string or an NSAttributedString pointer.
+  STATE, when non-NIL, sets the checkmark state: T means checked (on), NIL means unchecked.
   Returns the NSMenuItem pointer."
   (let* ((action (if (or callback url) (%sel "performAction:") (cffi:null-pointer)))
          (ns-item (send (send (%cls "NSMenuItem") "alloc" :pointer)
@@ -247,6 +253,12 @@
 
     (when submenu
       (send ns-item "setSubmenu:" :pointer (make-menu submenu) :void))
+
+    ;; Apply checkmark state if requested.
+    (when (not (null state))
+      (send ns-item "setState:"
+            :long (if state +ns-control-state-on+ +ns-control-state-off+)
+            :void))
 
     (send menu "addItem:" :pointer ns-item :void)
     ns-item))
@@ -290,15 +302,17 @@
 (defvar *current-menu* nil
   "Dynamically bound to the NSMenu being built inside build-menu.")
 
-(defun add-item (title &key callback submenu url)
+(defun add-item (title &key callback submenu url state)
   "Add an item to the menu currently being built by build-menu.
-  Must be called inside a build-menu body."
+  Must be called inside a build-menu body.
+  STATE: when T sets the native macOS checkmark (NSControlStateValueOn)."
   (unless *current-menu*
     (error "add-item must be called inside a build-menu body."))
   (%add-menu-item *current-menu* title
                   :callback callback
                   :submenu  submenu
-                  :url      url))
+                  :url      url
+                  :state    state))
 
 (defmacro build-menu (&body body)
   "Evaluate BODY with *current-menu* bound to a fresh NSMenu, then return it."
@@ -326,6 +340,57 @@
      name-or-menu)
     (t
      (error "make-menu: ~S is neither a symbol nor an NSMenu pointer." name-or-menu))))
+
+
+;;; ---- image status-item initialisation ------------------------------------
+
+(defun initialize-status-item-with-image (item image-path &key (size 18.0d0))
+  "Like initialize-status-item but uses an image file instead of a text title.
+  IMAGE-PATH is a CL pathname or string to a PNG/ICNS file.
+  SIZE is the desired status-bar icon size in points (default 18)."
+  (let* ((bar     (send (%cls "NSStatusBar") "systemStatusBar" :pointer))
+         (ns-item (send bar "statusItemWithLength:"
+                        :double +ns-variable-status-item-length+ :pointer)))
+    ;; Retain so it survives beyond the autorelease pool sweep.
+    (send ns-item "retain" :pointer)
+
+    ;; Load the image from the file path.
+    (let* ((path-str (if (pathnamep image-path)
+                         (namestring image-path)
+                         image-path))
+           (ns-path  (ns-str path-str))
+           ;; NSImage has no +imageWithContentsOfFile: class method;
+           ;; use [[NSImage alloc] initWithContentsOfFile:path] instead.
+           (image    (send (send (%cls "NSImage") "alloc" :pointer)
+                           "initWithContentsOfFile:"
+                           :pointer ns-path :pointer)))
+      (when (and image (not (cffi:null-pointer-p image)))
+        ;; setSize: takes an NSSize struct (two doubles: width, height).
+        ;; On arm64 structs <= 16 bytes in HFA registers are passed as
+        ;; individual :double arguments via objc_msgSend.
+        (send image "setSize:"
+              :double (float size 1.0d0)
+              :double (float size 1.0d0)
+              :void)
+        ;; Do NOT use template mode: template mode causes macOS to
+        ;; replace all pixels with a monochrome tint (white in dark mode),
+        ;; which turns a colour icon into a white square.
+        ;; Template mode is only useful for monochrome symbolic icons.
+        (send image "setTemplate:" :bool nil :void)
+        ;; Send setImage: directly to the NSStatusItem (not its button).
+        ;; This is the API that reliably works across macOS versions.
+        (send ns-item "setImage:" :pointer image :void)))
+
+    ;; Wire up the click handler (same as initialize-status-item).
+    (let ((click-target (ensure-click-target))
+          (button (send ns-item "button" :pointer)))
+      (send button "setAction:" :pointer (%sel "handleClick:") :void)
+      (send button "setTarget:" :pointer click-target :void)
+      (setf (gethash (cffi:pointer-address button) *click-table*) item))
+
+    (setf (barista/classes:get-ns-status-item item) ns-item)
+    (log:info "NSStatusItem (image) initialized")
+    (values)))
 
 
 ;;; ---- built-in Barista maintenance menu -----------------------------------
