@@ -4,11 +4,13 @@
   (:import-from #:barista/utils
                 #:on-main-thread)
   (:import-from #:barista/classes
-                #:get-string-form-for-macro)
+                #:get-string-form-for-macro
+                #:get-image)
   (:import-from #:barista/menu
                 #:make-menu
                 #:hide
-                #:initialize-status-item)
+                #:initialize-status-item
+                #:initialize-status-item-with-image)
   (:import-from #:barista/vars
                 #:*debug*
                 #:*plugin*)
@@ -28,6 +30,7 @@
     #:get-plugin-instance
     #:is-plugin-running
     #:get-title
+    #:get-image
     #:replace-menu
     #:get-available-plugins
     #:get-menu
@@ -64,6 +67,16 @@
 
 (defmethod (setf get-title) (value (plugin base-plugin))
   (setf (barista/classes:get-title (get-status-item plugin))
+        value))
+
+(defmethod get-image ((plugin base-plugin))
+  (barista/classes:get-image (get-status-item plugin)))
+
+(defmethod (setf get-image) (value (plugin base-plugin))
+  "Set the status-bar icon for PLUGIN from VALUE.
+  VALUE may be a CL pathname, a namestring, or an NSImage CFFI pointer
+  (e.g. from make-ns-image).  Dispatched on the main thread automatically."
+  (setf (barista/classes:get-image (get-status-item plugin))
         value))
 
 (defun running-plugins ()
@@ -145,6 +158,14 @@
 (defun get-menu-from (options)
   (second (assoc :menu options)))
 
+(defun get-image-from (options)
+  "Return the :image spec from OPTIONS, or NIL.
+  The spec may be a pathname, a string, or a list (:image PATH :size N :template T)."
+  (let ((entry (assoc :image options)))
+    (when entry
+      ;; Support both (:image PATH) and (:image PATH :size N :template T)
+      (rest entry))))
+
 (defun get-delay-from (period)
   "Process a period spec and return (values delay-seconds description-string).
   Period may be a keyword like :second, :minute, :hour, or a list:
@@ -202,12 +223,23 @@
   "Define a Barista plugin class with background workers and a menu-bar item.
 
   Options:
-    (:title EXPR)          -- initial status-bar title
-    (:menu SYMBOL)         -- name of a defmenu to show on click
-    (:every PERIOD FORMS)  -- background worker: evaluate FORMS every PERIOD"
+    (:title EXPR)                       -- initial status-bar title (text or attributed)
+    (:image PATH &key size template)    -- status-bar icon from an image file.
+                                           PATH is a pathname or string evaluated
+                                           at plugin start time.
+                                           SIZE (default 18) scales the icon.
+                                           TEMPLATE T for monochrome/symbolic icons
+                                           that should adapt to dark/light mode;
+                                           leave NIL (default) for colour images.
+    (:menu SYMBOL)                      -- name of a defmenu to show on click
+    (:every PERIOD FORMS)               -- background worker: evaluate FORMS every PERIOD
+
+  :title and :image are mutually exclusive; :image takes precedence when both
+  are supplied."
   (declare (ignorable options))
   (let ((title         (or (get-title-from options)
                            (format nil "~A" name)))
+        (image-spec    (get-image-from options))
         (menu-name     (get-menu-from options))
         (workers-forms (get-workers-from options)))
     `(progn
@@ -235,9 +267,14 @@
                    (make-instance 'barista/classes:status-item
                                   :title ,title
                                   :menu-thunk menu-thunk))
-             ;; Wire up the AppKit NSStatusItem (must be on main thread;
-             ;; start-plugin already ensures this via on-main-thread).
-             (initialize-status-item (get-status-item plugin)))
+             ;; Wire up the AppKit NSStatusItem.  When an :image option was
+             ;; supplied we use the image initialiser; otherwise plain text.
+             ,(if image-spec
+                  `(initialize-status-item-with-image
+                    (get-status-item plugin)
+                    ,(first image-spec)
+                    ,@(rest image-spec))
+                  `(initialize-status-item (get-status-item plugin))))
            (setf (get-threads plugin)
                  (list ,@workers-forms)))))))
 

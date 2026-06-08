@@ -344,41 +344,26 @@
 
 ;;; ---- image status-item initialisation ------------------------------------
 
-(defun initialize-status-item-with-image (item image-path &key (size 18.0d0))
+(defun initialize-status-item-with-image (item image-path &key (size 18.0d0) template)
   "Like initialize-status-item but uses an image file instead of a text title.
-  IMAGE-PATH is a CL pathname or string to a PNG/ICNS file.
-  SIZE is the desired status-bar icon size in points (default 18)."
+  IMAGE-PATH is a CL pathname or namestring to a PNG/ICNS file.
+  SIZE     -- desired icon size in points (default 18); passed to make-ns-image.
+  TEMPLATE -- when T, marks the image as a template (monochrome/symbolic icons
+              that should adapt to dark/light mode).  Leave NIL (default) for
+              colour images so pixels are rendered as-is."
   (let* ((bar     (send (%cls "NSStatusBar") "systemStatusBar" :pointer))
          (ns-item (send bar "statusItemWithLength:"
                         :double +ns-variable-status-item-length+ :pointer)))
     ;; Retain so it survives beyond the autorelease pool sweep.
     (send ns-item "retain" :pointer)
 
-    ;; Load the image from the file path.
-    (let* ((path-str (if (pathnamep image-path)
-                         (namestring image-path)
-                         image-path))
-           (ns-path  (ns-str path-str))
-           ;; NSImage has no +imageWithContentsOfFile: class method;
-           ;; use [[NSImage alloc] initWithContentsOfFile:path] instead.
-           (image    (send (send (%cls "NSImage") "alloc" :pointer)
-                           "initWithContentsOfFile:"
-                           :pointer ns-path :pointer)))
-      (when (and image (not (cffi:null-pointer-p image)))
-        ;; setSize: takes an NSSize struct (two doubles: width, height).
-        ;; On arm64 structs <= 16 bytes in HFA registers are passed as
-        ;; individual :double arguments via objc_msgSend.
-        (send image "setSize:"
-              :double (float size 1.0d0)
-              :double (float size 1.0d0)
-              :void)
-        ;; Do NOT use template mode: template mode causes macOS to
-        ;; replace all pixels with a monochrome tint (white in dark mode),
-        ;; which turns a colour icon into a white square.
-        ;; Template mode is only useful for monochrome symbolic icons.
-        (send image "setTemplate:" :bool nil :void)
-        ;; Send setImage: directly to the NSStatusItem (not its button).
-        ;; This is the API that reliably works across macOS versions.
+    ;; Load the image via the shared helper in barista/classes.
+    (let ((image (barista/classes:make-ns-image image-path
+                                                :size size
+                                                :template template)))
+      (when image
+        ;; setImage: directly on the NSStatusItem -- the API that reliably
+        ;; works across macOS versions (confirmed by eliza-limits-monitor).
         (send ns-item "setImage:" :pointer image :void)))
 
     ;; Wire up the click handler (same as initialize-status-item).

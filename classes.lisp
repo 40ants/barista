@@ -8,22 +8,23 @@
                 #:send
                 #:%cls
                 #:ns-str
-                #:lisp-str
                 #:alloc-init
                 #:call-on-main-thread)
   (:import-from #:barista/vars
                 #:+supported-colors+
                 #:+default-font-size+)
-  (:export
-   #:get-menu-thunk
-   #:get-ns-status-item
-   #:get-title
-   #:status-item
-   #:make-attributed-string
-   #:make-font
-   #:make-default-font
-   #:join-attributed-string
-   #:get-string-form-for-macro))
+   (:export
+    #:get-menu-thunk
+    #:get-ns-status-item
+    #:get-title
+    #:get-image
+    #:status-item
+    #:make-attributed-string
+    #:make-ns-image
+    #:make-font
+    #:make-default-font
+    #:join-attributed-string
+    #:get-string-form-for-macro))
 (in-package #:barista/classes)
 
 
@@ -92,6 +93,70 @@
              (t
               (log:warn "Unsupported title type" value)))))))
     (setf (%get-title item) value)))
+
+
+;;; ---- NSImage helpers -----------------------------------------------------
+
+(defun make-ns-image (path &key (size nil) (template nil))
+  "Load an NSImage from PATH (pathname or string).
+  PATH may be a CL pathname or a namestring.
+
+  Keyword arguments:
+    SIZE     -- when non-NIL, a number; calls setSize: with SIZE x SIZE points.
+    TEMPLATE -- when T, marks the image as a template image so macOS adapts
+                it to the current appearance (dark/light mode).  Use T only
+                for monochrome/symbolic icons.  For colour images leave NIL
+                (the default) so pixels render as-is.
+
+  Returns the NSImage pointer, or NIL if the file could not be loaded."
+  (let* ((path-str (if (pathnamep path) (namestring path) path))
+         (image    (send (send (%cls "NSImage") "alloc" :pointer)
+                         "initWithContentsOfFile:"
+                         :pointer (ns-str path-str) :pointer)))
+    (when (and image (not (cffi:null-pointer-p image)))
+      (when size
+        ;; NSSize is two doubles (width height); on arm64 passed as individual
+        ;; :double args in fp registers via objc_msgSend HFA calling convention.
+        (send image "setSize:"
+              :double (float size 1.0d0)
+              :double (float size 1.0d0)
+              :void))
+      (send image "setTemplate:" :bool (if template t nil) :void)
+      image)))
+
+(defgeneric get-image (item)
+  (:documentation "Return the current NSImage pointer set on ITEM, or NIL."))
+
+(defgeneric (setf get-image) (value item)
+  (:documentation "Set an NSImage on ITEM's NSStatusItem.
+  VALUE may be:
+    - an NSImage CFFI pointer (from make-ns-image)
+    - a CL pathname or namestring  (loaded automatically, template=NIL)
+    - NIL to clear the image"))
+
+(defmethod get-image ((item status-item))
+  ;; NSStatusItem has no getImage: that is easy to call; just return nil --
+  ;; callers that need the value should keep it themselves.
+  nil)
+
+(defmethod (setf get-image) (value (item status-item))
+  (let ((ns-item (get-ns-status-item item)))
+    (when ns-item
+      (call-on-main-thread
+       (lambda ()
+         (let ((image (cond
+                        ;; already an NSImage pointer
+                        ((and (cffi:pointerp value)
+                              (not (cffi:null-pointer-p value)))
+                         value)
+                        ;; pathname or string -- load from file
+                        ((or (pathnamep value) (stringp value))
+                         (make-ns-image value))
+                        ;; NIL -- clear
+                        ((null value) (cffi:null-pointer))
+                        (t (error "Unsupported image value: ~S" value)))))
+           (send ns-item "setImage:" :pointer image :void)))))
+    value))
 
 
 ;;; ---- NSColor helpers -----------------------------------------------------
