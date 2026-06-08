@@ -24,23 +24,23 @@ to the Barista too.
 Installation
 ============
 
-Right now there is no a binary to install, you need a `LispWorks`_ to load and run program.
-Here is how to install it and run built-in plugins.
+Download the latest ``Barista-x.y.z.dmg`` from the `GitHub Releases`_ page,
+open it and drag ``Barista.app`` to your ``Applications`` folder.
 
-Fist, add an Ultralisp quicklisp distribution containing `LispWorks`_ extensions:
+Because the app is not signed with an Apple Developer certificate, macOS will
+attach a quarantine flag to it when downloaded from the internet and refuse to
+open it with a *"Barista is damaged and can't be opened"* message.
 
-.. code::
+To remove the quarantine flag, run the following command in Terminal after
+copying the app to ``/Applications``:
 
-   (ql-dist:install-dist "http://dist.ultralisp.org/lispworks.txt"
-                         :prompt nil)
+.. code:: bash
 
-Next, load ``Barista`` with built-in plugins and run them:
+   xattr -dr com.apple.quarantine /Applications/Barista.app
 
-.. code::
+Then open the app normally.
 
-   (ql:quickload :barista)
-   (ql:quickload :barista-plugins)
-   (barista/main:start-plugins)
+.. _GitHub Releases: https://github.com/40ants/barista/releases
 
 Roadmap
 =======
