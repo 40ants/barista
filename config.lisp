@@ -2,7 +2,9 @@
   (:use #:cl)
   (:import-from #:ubiquitous
                 #:restore
-                #:value)
+                #:value
+                #:*storage-pathname*
+                #:*storage*)
   (:import-from #:log4cl)
   (:export
    #:restore-config
@@ -25,16 +27,25 @@
 
 (defun restore-config ()
   "Load Barista configuration from disk.
-  If the file does not exist (first launch), starts with empty storage --
-  all plugins will be disabled until the user enables them via Settings."
+  If the file does not exist (first launch), bootstraps an empty storage and
+  points *storage-pathname* at the target path so that subsequent
+  (setf (value ...)) calls persist to the correct file.
+
+  Note: when handler-case catches no-storage-file, ubiquitous leaves
+  *storage-pathname* pointing at its default global path and does NOT set
+  it to the requested path.  We must set both *storage-pathname* and
+  *storage* explicitly to make offload work correctly later."
   (let ((path (config-pathname)))
     (log:info "Restoring config from ~A" path)
     (handler-case
         (restore path)
       (ubiquitous:no-storage-file ()
-        (log:info "No config file found at ~A; starting with defaults (all plugins disabled)" path)
-        ;; Ensure the directory exists so ubiquitous can write later.
-        (ensure-directories-exist path)))))
+        (log:info "No config file at ~A; initialising empty storage" path)
+        (ensure-directories-exist path)
+        ;; Point ubiquitous at our path and give it a fresh hash-table so
+        ;; the next (setf value) call knows where to offload.
+        (setf *storage-pathname* path
+              *storage*          (make-hash-table :test 'equal))))))
 
 
 ;;; ---- Plugin enable/disable -----------------------------------------------

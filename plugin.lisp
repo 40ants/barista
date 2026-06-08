@@ -120,14 +120,20 @@
 (defun get-available-plugins ()
   *available-plugins*)
 
+(defun %start-plugin-sync (class-name)
+  "Start CLASS-NAME synchronously.  Must be called on the AppKit main thread."
+  (when (is-plugin-running class-name)
+    (log:info "Stopping existing plugin instance ~A" class-name)
+    (stop-plugin class-name))
+  (log:info "Creating plugin instance ~A" class-name)
+  (let ((instance (make-instance class-name)))
+    (initialize-plugin instance)))
+
 (defun start-plugin (class-name)
+  "Start CLASS-NAME, dispatching to the AppKit main thread via GCD.
+  Safe to call from any thread.  Returns immediately."
   (on-main-thread
-    (when (is-plugin-running class-name)
-      (log:info "Stopping existing plugin instance ~A" class-name)
-      (stop-plugin class-name))
-    (log:info "Creating plugin instance ~A" class-name)
-    (let ((instance (make-instance class-name)))
-      (initialize-plugin instance))))
+    (%start-plugin-sync class-name)))
 
 (defun restart-plugin (class-name)
   (start-plugin class-name))
@@ -137,15 +143,16 @@
 
 (defun start-enabled-plugins ()
   "Start only the plugins that are enabled in the configuration.
-  Uses barista/config:plugin-enabled-p to check each available plugin.
-  Must be called on the AppKit main thread."
+  Must be called directly on the AppKit main thread (not via GCD) so that
+  all plugins are registered in *running-plugins* before the caller checks
+  visibility (e.g. ensure-system-plugin)."
   (let ((available (get-available-plugins)))
     (log:info "Starting enabled plugins from ~A available" (length available))
     (dolist (name available)
       (if (uiop:symbol-call :barista/config :plugin-enabled-p name)
           (progn
             (log:info "Starting enabled plugin ~A" name)
-            (start-plugin name))
+            (%start-plugin-sync name))
           (log:info "Skipping disabled plugin ~A" name)))))
 
 

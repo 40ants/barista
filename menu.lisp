@@ -97,6 +97,25 @@
 (defvar *click-target-class*    nil)
 (defvar *click-target-instance* nil)
 
+(defun %append-system-section (menu)
+  "Append a separator, a Settings > Plugins submenu, and a Quit item to MENU.
+  Called automatically after every plugin menu-thunk so users always have
+  access to plugin management regardless of which plugin they clicked."
+  ;; Separator line
+  (send menu "addItem:"
+        :pointer (send (%cls "NSMenuItem") "separatorItem" :pointer)
+        :void)
+  ;; Settings > Plugins submenu -- built lazily via symbol-call to avoid a
+  ;; compile-time circular dependency: menu <- system-plugin -> menu.
+  (let ((plugins-menu (uiop:symbol-call :barista/system-plugin
+                                        :make-plugins-submenu)))
+    (%add-menu-item menu "Settings" :submenu plugins-menu))
+  ;; Quit
+  (%add-menu-item menu "Quit"
+                  :callback (lambda ()
+                              (log:info "Quitting")
+                              (uiop:quit 0))))
+
 (cffi:defcallback %barista-click-cb :void
     ((self :pointer) (cmd :pointer) (sender :pointer))
   (declare (ignore self cmd))
@@ -114,7 +133,15 @@
                         (when status-item-obj
                           (let ((thunk (get-menu-thunk status-item-obj)))
                             (when thunk (funcall thunk)))))))
-        (when menu
+        (when (and menu (not (cffi:null-pointer-p menu)))
+          ;; Append separator + Settings + Quit to every plugin menu so the
+          ;; user can always manage plugins without the system icon.
+          ;; Skip for: Alt-click maintenance menu (already has Quit), and
+          ;; the system plugin itself (its menu IS the Settings menu).
+          (unless (or alt-p
+                      (and status-item-obj
+                           (barista/classes:system-item-p status-item-obj)))
+            (%append-system-section menu))
           ;; sender IS the button -- pass it directly as inView.
           (send menu
                 "popUpMenuPositioningItem:atLocation:inView:"

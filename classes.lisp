@@ -18,6 +18,7 @@
     #:get-ns-status-item
     #:get-title
     #:get-image
+    #:system-item-p
     #:status-item
     #:make-attributed-string
     #:make-ns-image
@@ -69,7 +70,13 @@
    (menu-thunk :initform nil
                :initarg :menu-thunk
                :accessor get-menu-thunk
-               :documentation "Nullary function that builds and returns an NSMenu pointer."))
+               :documentation "Nullary function that builds and returns an NSMenu pointer.")
+   (system-item-p :initform nil
+                  :initarg :system-item-p
+                  :accessor system-item-p
+                  :documentation "When T, this is the system plugin item.
+  The click handler skips appending the Settings/Quit section to its menu
+  because it already is the Settings menu."))
   (:documentation "Wraps an NSStatusItem for one Barista plugin."))
 
 (defgeneric get-title (item)

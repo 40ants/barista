@@ -90,10 +90,6 @@
                          :dont-close t
                          :style :spawn))
 
-  ;; Load configuration before plugins so plugin-enabled-p is available
-  ;; when start-enabled-plugins runs.
-  (restore-config)
-
   (load-plugins)
 
   ;; All AppKit / ObjC operations must run on macOS thread 0.
@@ -109,6 +105,13 @@
 
       (log:info "Loading ObjC frameworks")
       (load-objc-frameworks)
+
+      ;; Restore config on the main thread so that ubiquitous *storage* and
+      ;; *storage-pathname* are set in the same thread where (setf value)
+      ;; will later be called from menu callbacks.  Moving restore-config
+      ;; here ensures reads and writes share the same dynamic environment.
+      (log:info "Restoring config")
+      (restore-config)
 
       ;; Initialise NSApplication and suppress the Dock icon.
       (let ((app (send (%cls "NSApplication") "sharedApplication" :pointer)))

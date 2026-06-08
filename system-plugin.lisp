@@ -25,7 +25,8 @@
    #:ensure-system-plugin
    #:show-system-plugin
    #:hide-system-plugin
-   #:update-system-plugin-visibility))
+   #:update-system-plugin-visibility
+   #:make-plugins-submenu))
 (in-package #:barista/system-plugin)
 
 
@@ -118,7 +119,8 @@
     (log:info "Creating system plugin status item")
     (let ((item (make-instance 'status-item
                                :title "Barista"
-                               :menu-thunk nil))
+                               :menu-thunk nil
+                               :system-item-p t))
           (icon (find-icon-path)))
       (setf (get-menu-thunk item)
             (lambda () (make-settings-menu)))
