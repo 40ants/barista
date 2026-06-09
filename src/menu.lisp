@@ -240,10 +240,11 @@
     (send menu "setAutoenablesItems:" :bool nil :void)
     menu))
 
-(defun %add-menu-item (menu title &key callback submenu url state)
+(defun %add-menu-item (menu title &key callback submenu url state disabled)
   "Add one item to NSMenu pointer MENU.
   TITLE may be a plain string or an NSAttributedString pointer.
   STATE, when non-NIL, sets the checkmark state: T means checked (on), NIL means unchecked.
+  DISABLED, when T, greys out the item and makes it non-interactive.
   Returns the NSMenuItem pointer."
   (let* ((action (if (or callback url) (%sel "performAction:") (cffi:null-pointer)))
          (ns-item (send (send (%cls "NSMenuItem") "alloc" :pointer)
@@ -288,6 +289,9 @@
             :long (if state +ns-control-state-on+ +ns-control-state-off+)
             :void))
 
+    (when disabled
+      (send ns-item "setEnabled:" :bool nil :void))
+
     (send menu "addItem:" :pointer ns-item :void)
     ns-item))
 
@@ -330,17 +334,19 @@
 (defvar *current-menu* nil
   "Dynamically bound to the NSMenu being built inside build-menu.")
 
-(defun add-item (title &key callback submenu url state)
+(defun add-item (title &key callback submenu url state disabled)
   "Add an item to the menu currently being built by build-menu.
   Must be called inside a build-menu body.
-  STATE: when T sets the native macOS checkmark (NSControlStateValueOn)."
+  STATE:    when T sets the native macOS checkmark (NSControlStateValueOn).
+  DISABLED: when T greys out the item and makes it non-interactive."
   (unless *current-menu*
     (error "add-item must be called inside a build-menu body."))
   (%add-menu-item *current-menu* title
                   :callback callback
                   :submenu  submenu
                   :url      url
-                  :state    state))
+                  :state    state
+                  :disabled disabled))
 
 (defun add-separator ()
   "Add a native NSMenuItem separator to the menu currently being built.

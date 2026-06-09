@@ -94,7 +94,7 @@
             (add-separator)
             (add-item "Clear history"
                       :callback (f_% (setf (get-history plugin) nil))))
-          (add-item "(empty)" :callback nil)))))
+          (add-item "(empty)" :disabled t)))))
 
 
 ;;; ---- plugin ---------------------------------------------------------------
