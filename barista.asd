@@ -19,6 +19,7 @@
                "uiop"
                 "ubiquitous"
                 "zpng"
+                "dexador"
                 "swank"
                 "slynk")
   :build-operation "program-op"
