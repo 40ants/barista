@@ -26,6 +26,7 @@
     #:make-menu
     #:build-menu
     #:add-item
+    #:add-separator
     #:initialize-status-item
     #:initialize-status-item-with-image))
 (in-package #:barista/menu)
@@ -340,6 +341,15 @@
                   :submenu  submenu
                   :url      url
                   :state    state))
+
+(defun add-separator ()
+  "Add a native NSMenuItem separator to the menu currently being built.
+  Must be called inside a build-menu body."
+  (unless *current-menu*
+    (error "add-separator must be called inside a build-menu body."))
+  (send *current-menu* "addItem:"
+        :pointer (send (%cls "NSMenuItem") "separatorItem" :pointer)
+        :void))
 
 (defmacro build-menu (&body body)
   "Evaluate BODY with *current-menu* bound to a fresh NSMenu, then return it."

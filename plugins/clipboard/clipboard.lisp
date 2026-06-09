@@ -7,7 +7,8 @@
                 #:lisp-str)
   (:import-from #:barista/menu
                 #:build-menu
-                #:add-item)
+                #:add-item
+                #:add-separator)
   (:import-from #:barista/plugin
                 #:defplugin)
   (:import-from #:barista/vars
@@ -90,7 +91,7 @@
             (dolist (item history)
               (add-item (truncate-for-display item)
                         :callback (make-copy-callback item plugin)))
-            (add-item "—————————————")
+            (add-separator)
             (add-item "Clear history"
                       :callback (f_% (setf (get-history plugin) nil))))
           (add-item "(empty)" :callback nil)))))
