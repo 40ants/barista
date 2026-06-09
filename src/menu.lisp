@@ -109,7 +109,7 @@
   ;; compile-time circular dependency: menu <- system-plugin -> menu.
   (let ((plugins-menu (uiop:symbol-call :barista/system-plugin
                                         :make-plugins-submenu)))
-    (%add-menu-item menu "Settings" :submenu plugins-menu))
+    (%add-menu-item menu "Plugins" :submenu plugins-menu))
   ;; Quit
   (%add-menu-item menu "Quit"
                   :callback (lambda ()
