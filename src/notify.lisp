@@ -29,7 +29,7 @@
       (error "Sound ~A not found. Supported sounds are: ~{~A~^, ~}"
              sound
              (get-available-sounds))))
-  
+
   (let ((command (fmt nil
                       "osascript -e 'display notification "
                       (:s message)

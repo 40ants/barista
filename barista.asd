@@ -1,6 +1,7 @@
 (asdf:defsystem "barista"
   :description "macOS menu-bar application framework in Common Lisp (SBCL/CFFI)"
   :class :package-inferred-system
+  :pathname "src"
   :defsystem-depends-on ()
   :depends-on ("barista/main"
                ;; Explicit system-level deps that package-inferred-system
@@ -16,11 +17,12 @@
                "local-time"
                "local-time-duration"
                "uiop"
-               "ubiquitous"
-               "swank"
-               "slynk")
+                "ubiquitous"
+                "zpng"
+                "swank"
+                "slynk")
   :build-operation "program-op"
-  :build-pathname "barista"
+  :build-pathname "../barista"
   :entry-point "barista/main::main")
 
 #+sb-core-compression

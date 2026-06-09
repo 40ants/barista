@@ -38,7 +38,9 @@
     #:start-enabled-plugins
 
     #:with-plugin
-    #:restart-plugins))
+    #:restart-plugins
+    #:initialize-plugin
+    #:get-status-item))
 (in-package #:barista/plugin)
 
 
