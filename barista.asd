@@ -20,6 +20,7 @@
                 "ubiquitous"
                 "zpng"
                 "dexador"
+                "cxml"
                 "swank"
                 "slynk")
   :build-operation "program-op"

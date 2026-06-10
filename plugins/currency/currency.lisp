@@ -8,8 +8,6 @@
                 #:get-title)
   (:import-from #:barista/vars
                 #:*plugin*)
-  (:import-from #:cl-ppcre
-                #:scan-to-strings)
   (:import-from #:local-time
                 #:now
                 #:format-timestring))
@@ -17,92 +15,88 @@
 
 
 ;;; ---- CBR XML fetch & parse -----------------------------------------------
+;;;
+;;; The CBR feed is declared as windows-1251.  dexador is asked for raw octets
+;;; (:force-binary t) so that CXML can honour the encoding declaration and
+;;; produce correct Unicode strings from the start.
 
 (defparameter +cbr-url+
   "https://www.cbr.ru/scripts/XML_daily.asp"
   "URL of the Central Bank of Russia daily currency rates XML feed.")
 
-(defun fetch-cbr-xml ()
-  "Fetch the CBR daily rates XML and return it as a string, or NIL on error."
+(defun fetch-cbr-octets ()
+  "Fetch the CBR XML feed and return it as an octet vector, or NIL on error."
   (handler-case
-      (dex:get +cbr-url+)
+      (dex:get +cbr-url+ :force-binary t)
     (error (e)
       (log:warn "Currency fetch failed: ~A" e)
       nil)))
 
-(defun parse-rate (xml char-code)
-  "Extract the exchange rate for CHAR-CODE (e.g. \"USD\") from CBR XML string.
-  Returns a float, or NIL if not found.
-  CBR XML structure (simplified):
-    <Valute ...>
-      <CharCode>USD</CharCode>
-      <Nominal>1</Nominal>
-      <Value>89,5000</Value>
-    </Valute>"
-  (when xml
-    (handler-case
-        (multiple-value-bind (match regs)
-            (scan-to-strings
-             (concatenate 'string
-                          "<CharCode>" char-code "</CharCode>"
-                          "\\s*<Nominal>(\\d+)</Nominal>"
-                          "\\s*<Value>([\\d,]+)</Value>")
-             xml)
-          (when match
-            (let* ((nominal (parse-integer (aref regs 0)))
-                   (value-str (substitute #\. #\, (aref regs 1)))
-                   (value (read-from-string value-str)))
-              (/ (float value) nominal))))
-      (error (e)
-        (log:warn "Currency parse error for ~A: ~A" char-code e)
-        nil))))
+(defun dom-text (node)
+  "Return the concatenated text content of DOM NODE's child text nodes."
+  (with-output-to-string (s)
+    (dom:do-node-list (child (dom:child-nodes node))
+      (when (dom:text-node-p child)
+        (write-string (dom:node-value child) s)))))
+
+(defun parse-valute (document char-code)
+  "Find the Valute element with CharCode CHAR-CODE in DOCUMENT and return
+  its rate as a float (Value / Nominal), or NIL if not found."
+  (dom:do-node-list (valute (dom:get-elements-by-tag-name document "Valute"))
+      (let ((codes    (dom:get-elements-by-tag-name valute "CharCode"))
+            (nominals (dom:get-elements-by-tag-name valute "Nominal"))
+            (values   (dom:get-elements-by-tag-name valute "Value")))
+      (when (and (plusp (dom:length codes))
+                 (string= (dom-text (dom:item codes 0)) char-code))
+        (let ((nominal (parse-integer (dom-text (dom:item nominals 0))))
+              (value   (read-from-string
+                        (substitute #\. #\,
+                                    (dom-text (dom:item values 0))))))
+          (return-from parse-valute (/ (float value) nominal))))))
+  nil)
 
 (defun fetch-rates ()
-  "Fetch USD and EUR rates from CBR. Updates plugin slots on success."
-  (let ((xml (fetch-cbr-xml)))
-    (when xml
-      (let ((usd (parse-rate xml "USD"))
-            (eur (parse-rate xml "EUR")))
-        (when usd (setf (get-usd-rate *plugin*) usd))
-        (when eur (setf (get-eur-rate *plugin*) eur))
-        (when (or usd eur)
-          (setf (get-updated-at *plugin*) (now)))))))
+  "Fetch USD and EUR rates from CBR and update the plugin slots."
+  (let ((octets (fetch-cbr-octets)))
+    (when octets
+      (handler-case
+          (let* ((document (cxml:parse octets (cxml-dom:make-dom-builder)))
+                 (usd      (parse-valute document "USD"))
+                 (eur      (parse-valute document "EUR")))
+            (when usd (setf (get-usd-rate *plugin*) usd))
+            (when eur (setf (get-eur-rate *plugin*) eur))
+            (when (or usd eur)
+              (setf (get-updated-at *plugin*) (now))))
+        (error (e)
+          (log:warn "Currency XML parse failed: ~A" e))))))
 
 
 ;;; ---- display helpers -----------------------------------------------------
 
 (defun format-rate (rate symbol)
-  "Format RATE as e.g. \"$89.50\", or \"…\" while loading."
+  "Format RATE as e.g. \"$89.50\", or \"symbol...\" while loading."
   (if rate
       (format nil "~A~,2F" symbol rate)
       (concatenate 'string symbol "...")))
 
 (defun update-title ()
   "Flip between USD and EUR display in the status bar."
-  (let ((show-usd (get-show-usd *plugin*))
-        (usd      (get-usd-rate *plugin*))
-        (eur      (get-eur-rate *plugin*)))
-    (setf (get-title *plugin*)
-          (if show-usd
-              (format-rate usd "$")
-              (format-rate eur "€")))
-    (setf (get-show-usd *plugin*) (not show-usd))))
+  (setf (get-title *plugin*)
+        (if (get-show-usd *plugin*)
+            (format-rate (get-usd-rate *plugin*) "$")
+            (format-rate (get-eur-rate *plugin*) "€")))
+  (setf (get-show-usd *plugin*) (not (get-show-usd *plugin*))))
 
 
 ;;; ---- menu builder --------------------------------------------------------
 
-(defun format-updated-at (ts)
-  "Return a human-readable last-updated string for timestamp TS."
-  (if ts
-      (format-timestring nil ts :format '("Updated " :hour ":" :min))
-      "Not yet updated"))
-
 (defun build-currency-menu (plugin)
   "Build the currency NSMenu from PLUGIN's current rates."
   (build-menu
-    (add-item (format nil "USD  ~A ₽" (format-rate (get-usd-rate plugin) "")))
-    (add-item (format nil "EUR  ~A ₽" (format-rate (get-eur-rate plugin) "")))
-    (add-item (format-updated-at (get-updated-at plugin)))))
+    (add-item (format nil "USD  ~A ₽" (format-rate (get-usd-rate plugin) ""))
+              :disabled t)
+    (add-item (format nil "EUR  ~A ₽" (format-rate (get-eur-rate plugin) ""))
+              :disabled t)))
 
 
 ;;; ---- plugin ---------------------------------------------------------------
