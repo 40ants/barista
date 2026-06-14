@@ -136,7 +136,7 @@ interactively.
 
 (defsection @introduction (:title "Introduction")
   """
-![](images/pomodoro.gif)
+![](./docs/images/pomodoro.gif)
 
 Barista turns the macOS menu bar into a live Lisp-powered dashboard.
 
