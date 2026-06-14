@@ -19,6 +19,8 @@
   (:import-from #:barista/system-plugin
                 #:ensure-system-plugin)
   (:import-from #:log4cl-extras/config)
+  (:import-from #:log4cl-extras/error
+                #:with-log-unhandled)
   (:export
    #:load-plugins
    #:start-plugins
@@ -91,6 +93,17 @@
                          :style :spawn))
 
   (load-plugins)
+
+  (bordeaux-threads:make-thread
+   (lambda ()
+     (loop do
+       (handler-case 
+           (with-log-unhandled ()
+             (sleep 60)
+             (sb-ext:gc :full t))
+         (serious-condition (err)
+           (log:warn "Just ignoring ~A to make another loop" err)))))
+   :name "Periodic GC")
 
   ;; All AppKit / ObjC operations must run on macOS thread 0.
   ;; trivial-main-thread:with-body-in-main-thread hands off to that thread
