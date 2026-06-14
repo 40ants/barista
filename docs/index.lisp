@@ -276,6 +276,12 @@ the status bar (rendered dynamically as a PNG). The dropdown menu displays
 numeric percentages for each metric. Colors change from green to orange to
 red as usage increases. Metrics are read directly from Mach/IOKit APIs via
 CFFI — no external commands.
+
+### Community Plugins
+
+* [barista-zai-quota](https://github.com/svetlyak40wt/barista-zai-quota) —
+  Shows [Z.AI](https://z.ai) Coding Plan token quota (5-hour and weekly) as a
+  colored bar-chart icon.
 """)
 
 
