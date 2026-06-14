@@ -1,5 +1,10 @@
 /.qlot/
 /.DS_Store
 /Barista.app/
-
-
+/dist/
+/app
+/barista
+/eliza-limits-monitor/
+/src/barista
+/docs/build/
+/other-libs/

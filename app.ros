@@ -1,0 +1,17 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+(progn ;;init
+  (load (merge-pathnames ".qlot/setup.lisp" (uiop:getcwd)))
+  #+quicklisp (ql:quickload :barista :silent t)
+  #+quicklisp (ql:quickload :barista-plugins :silent t))
+
+(defpackage :ros.script.barista.main
+  (:use :cl)
+  (:import-from #:barista/main
+                #:main))
+(in-package :ros.script.barista.main)
+
+;;; vim: set ft=lisp lisp:

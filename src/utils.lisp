@@ -5,6 +5,8 @@
   (:import-from #:local-time-duration
                 #:duration-as)
   (:import-from #:bordeaux-threads)
+  (:import-from #:barista/objc
+                #:call-on-main-thread)
   (:export #:format-duration
            #:open-url
            #:on-main-thread))
@@ -65,6 +67,7 @@
 
 
 (defun open-url (url)
+  "Open URL in the default browser via a background thread."
   (let ((command (format nil "open ~A" url)))
     (bordeaux-threads:make-thread
      (lambda ()
@@ -73,8 +76,6 @@
 
 
 (defmacro on-main-thread (&rest actions)
-  `(progn ,@actions)
-;;;   `(ccl::call-in-event-process
-;;;     #'(lambda ()
-;;;         ,@actions))
-  )
+  "Schedule ACTIONS to run on the AppKit main thread via GCD.
+  Returns immediately (fire-and-forget).  Safe to call from any thread."
+  `(call-on-main-thread (lambda () ,@actions)))

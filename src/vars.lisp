@@ -17,7 +17,8 @@
 (defvar *debug* nil
   "If True, then debugger will be invoked on any error in the periodic threads.")
 
-(defvar +default-font-size+ 14)
+(defvar +default-font-size+ 14
+  "Default font size in points for status-bar text.")
 
 (defparameter +supported-colors+
   (sort
