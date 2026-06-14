@@ -16,6 +16,7 @@
    (:export
     #:get-menu-thunk
     #:get-ns-status-item
+    #:get-button-address
     #:get-title
     #:get-image
     #:system-item-p
@@ -63,6 +64,12 @@
   ((ns-status-item :initform nil
                    :accessor get-ns-status-item
                    :documentation "Raw CFFI pointer to the AppKit NSStatusItem.")
+   (button-address :initform nil
+                   :accessor get-button-address
+                   :documentation "Integer pointer address of the NSStatusBarButton,
+   captured at initialisation time and used for *click-table* keying and cleanup.
+   Storing it avoids calling (send ns-item \"button\") on a potentially-released
+   object during hide.")
    (title :initform "Unknown"
           :initarg :title
           :accessor %get-title

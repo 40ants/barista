@@ -12,9 +12,10 @@
                 #:alloc-init
                 #:ns-str)
   (:import-from #:barista/classes
-                #:get-string-form-for-macro
                 #:get-ns-status-item
+                #:get-button-address
                 #:get-menu-thunk
+                #:get-string-form-for-macro
                 #:get-title)
   (:import-from #:barista/vars
                 #:*plugin*)
@@ -200,12 +201,15 @@
     ;; AppKit routes the action through the button, so we set action/target
     ;; on the button and key *click-table* by button address -- that is what
     ;; %barista-click-cb receives as `sender`.
-    (let ((click-target (ensure-click-target))
-          (button (send ns-item "button" :pointer)))
+    (let* ((click-target (ensure-click-target))
+           (button       (send ns-item "button" :pointer))
+           (addr         (cffi:pointer-address button)))
       (send button "setAction:" :pointer (%sel "handleClick:") :void)
       (send button "setTarget:" :pointer click-target :void)
-      ;; Register so the click callback can find the Lisp status-item object.
-      (setf (gethash (cffi:pointer-address button) *click-table*) item))
+      ;; Persist the button address in the Lisp object so hide can use it
+      ;; without calling (send ns-item "button") on a potentially-released object.
+      (setf (get-button-address item) addr)
+      (setf (gethash addr *click-table*) item))
 
     (setf (barista/classes:get-ns-status-item item) ns-item)
     (log:info "NSStatusItem initialized for ~A" (type-of *plugin*))
@@ -220,10 +224,15 @@
     (let ((ns-item (get-ns-status-item item))
           (bar     (send (%cls "NSStatusBar") "systemStatusBar" :pointer)))
       (when (and ns-item (not (cffi:null-pointer-p ns-item)))
-        ;; Deregister from click table (keyed by button address).
-        (let ((button (send ns-item "button" :pointer)))
-          (when (and button (not (cffi:null-pointer-p button)))
-            (remhash (cffi:pointer-address button) *click-table*)))
+        ;; Deregister from click table using the address captured at init time.
+        ;; We deliberately do NOT call (send ns-item "button") here: after
+        ;; removeStatusItem: / release the NSStatusItem is deallocated, and
+        ;; asking it for its button can return a stale or reused pointer that
+        ;; aliases another live plugin's button, causing that plugin to vanish.
+        (let ((addr (get-button-address item)))
+          (when addr
+            (remhash addr *click-table*)
+            (setf (get-button-address item) nil)))
         ;; setView:nil workaround for stale status bar display:
         ;; https://stackoverflow.com/questions/23066802
         (send ns-item "setView:" :pointer (cffi:null-pointer) :void)
@@ -410,11 +419,14 @@
         (send ns-item "setImage:" :pointer image :void)))
 
     ;; Wire up the click handler (same as initialize-status-item).
-    (let ((click-target (ensure-click-target))
-          (button (send ns-item "button" :pointer)))
+    (let* ((click-target (ensure-click-target))
+           (button       (send ns-item "button" :pointer))
+           (addr         (cffi:pointer-address button)))
       (send button "setAction:" :pointer (%sel "handleClick:") :void)
       (send button "setTarget:" :pointer click-target :void)
-      (setf (gethash (cffi:pointer-address button) *click-table*) item))
+      ;; Persist the button address so hide can use it safely.
+      (setf (get-button-address item) addr)
+      (setf (gethash addr *click-table*) item))
 
     (setf (barista/classes:get-ns-status-item item) ns-item)
     (log:info "NSStatusItem (image) initialized")
