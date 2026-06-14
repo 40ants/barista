@@ -1,0 +1,630 @@
+<html lang=en>
+ <head>
+  <meta charset=UTF-8><meta name=viewport
+      content="width=device-width, initial-scale=1">
+  <title>Barista — a macOS menu-bar application framework in Common Lisp.</title>
+  <link rel=alternate
+        href="https://40ants.com/barista/changelog.xml"
+        type="application/rss+xml">
+  <link rel=stylesheet type="text/css"
+        href=theme.css>
+  <script type="text/javascript" src=jquery.js></script>
+  <script type="text/javascript" src=toc.js></script>
+  <script type="text/javascript">$(document).ready(function() {$('a:has(img)').css('border-bottom', 'none')})</script>
+  <link rel=stylesheet type="text/css"
+      href=highlight.min.css>
+  <script type="text/javascript"
+          src=highlight.min.js></script>
+  <script type="text/javascript">hljs.highlightAll();</script>
+<style type="text/css">
+/* Стили для сворачиваемого меню */
+.sidebar ul ul {
+  display: none; /* Скрываем все подменю по умолчанию */
+  margin-left: 0.5em;
+}
+
+.sidebar li.expanded > ul {
+  display: block; /* Показываем подменю для развернутых элементов */
+}
+
+/* Стили для пунктов с подменю */
+.sidebar li.has-children > a {
+  cursor: pointer;
+  position: relative;
+  padding-left: 1.2em;
+}
+
+.sidebar li.has-children > p > a {
+  position: relative;
+  left: -1rem;
+}
+
+.sidebar li.has-children > p > a::before {
+  content:"►";
+}
+
+.sidebar li.has-children.expanded > p > a::before {
+  content: "▼";
+  position: relative;
+  left: -0.08rem;
+}
+
+/* Подсветка активного пункта */
+.sidebar li.active > a {
+  font-weight: bold;
+}
+
+/* Если активная страница находится в подменю, раскрываем родителя */
+.sidebar li.active-parent {
+  font-weight: normal;
+}
+
+.sidebar li.active-parent > ul {
+  display: block;
+}
+</style>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FL71WXK73K"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-FL71WXK73K');
+    </script>
+
+    <!-- Yandex.Metrika counter -->
+    <script type="text/javascript" >
+       (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+       m[i].l=1*new Date();
+       for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+       k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+       (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+       ym(42462884, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true
+       });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/42462884" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+    <!-- /Yandex.Metrika counter -->
+
+ </head>
+ <body>
+  <div class=page><a id=fork-me href="https://github.com/40ants/barista">Fork me on GitHub</a>
+   <div class=navbar>
+    <div class=navbar-inner>
+     <a class=brand href="/">
+      <img class=logo
+           src="https://40ants.com/img/logo.svg"></a>
+     <ul class=nav>
+      <li><a href="/posts/">Blog</a>
+      <li><a href="/ru/posts/">Blog (RU)</a>
+      <li><a href="/tips/">Lisp Tips</a>
+      <li><a href="/projects/">Our Projects</a>
+      <li><a href="/about/">About</a>
+     </ul>
+    </div>
+   </div>
+   <input type=checkbox id=sidebar-check>
+   <label for=sidebar-check>
+    <div id=sidebar-trigger>
+     <span></span><span></span><span></span>
+    </div></label><div class=sidebar><div class=header><form class=search method=GET action="search/">
+      <input type=text name=q>
+      <input type=submit value=Search><span id=search-progress></span>
+     </form>
+    </div><div class=content><div class=page-toc><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-40INDEX-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-40INDEX-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Barista — a macOS menu-bar application framework in Common Lisp.</a></p><ul><li><p><a href="#barista-asdf-system-details" data-document="" data-node="barista-asdf-system-details">BARISTA ASDF System Details</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40INTRODUCTION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40INTRODUCTION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Introduction</a></p><ul><li><p><a href="#how-it-works" data-document="" data-node="how-it-works">How it works</a></p></li><li><p><a href="#key-features" data-document="" data-node="key-features">Key features</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40INSTALLATION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40INSTALLATION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Installation</a></p><ul><li><p><a href="#from-a-pre-built-release" data-document="" data-node="from-a-pre-built-release">From a pre-built release</a></p></li><li><p><a href="#build-from-source" data-document="" data-node="build-from-source">Build from source</a></p></li><li><p><a href="#running-with-a-repl" data-document="" data-node="running-with-a-repl">Running with a REPL</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40AVAILABLE-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40AVAILABLE-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Available Plugins</a></p><ul><li><p><a href="#pomodoro" data-document="" data-node="pomodoro">Pomodoro</a></p></li><li><p><a href="#clipboard" data-document="" data-node="clipboard">Clipboard</a></p></li><li><p><a href="#currency" data-document="" data-node="currency">Currency</a></p></li><li><p><a href="#system-monitor" data-document="" data-node="system-monitor">System Monitor</a></p></li><li><p><a href="#community-plugins" data-document="" data-node="community-plugins">Community Plugins</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40WRITING-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40WRITING-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Writing Custom Plugins</a></p><ul><li><p><a href="#minimal-text-plugin" data-document="" data-node="minimal-text-plugin">Minimal text plugin</a></p></li><li><p><a href="#defplugin-options" data-document="" data-node="defplugin-options">defplugin options</a></p></li><li><p><a href="#image-icon-plugin" data-document="" data-node="image-icon-plugin">Image icon plugin</a></p></li><li><p><a href="#menus" data-document="" data-node="menus">Menus</a></p></li><li><p><a href="#dynamic-menu-wiring" data-document="" data-node="dynamic-menu-wiring">Dynamic menu wiring</a></p></li><li><p><a href="#the-plugin-variable" data-document="" data-node="the-plugin-variable">The <i>plugin</i> variable</a></p></li><li><p><a href="#switching-menus-at-runtime" data-document="" data-node="switching-menus-at-runtime">Switching menus at runtime</a></p></li><li><p><a href="#enabling-plugins" data-document="" data-node="enabling-plugins">Enabling plugins</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40API-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40API-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">API</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/CLASSES</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FClasses-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FClasses-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Classes</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-24STATUS-ITEM-3FCLASS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-24STATUS-ITEM-3FCLASS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">STATUS-ITEM</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Generics</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCONFIG-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCONFIG-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/CONFIG</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCONFIG-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCONFIG-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMAIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMAIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/MAIN</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMAIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMAIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMENU-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMENU-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/MENU</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Generics</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Macros</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FPLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FPLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/PLUGIN</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Generics</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Macros</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FSYSTEM-PLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FSYSTEM-PLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/SYSTEM-PLUGIN</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FSYSTEM-PLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FSYSTEM-PLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FUTILS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FUTILS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/UTILS</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Functions</a></p></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Macros</a></p></li></ul></li><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FVARS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FVARS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">BARISTA/VARS</a></p><ul><li><p><a href="#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FVARS-3FVariables-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="" data-node="x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FVARS-3FVariables-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">Variables</a></p></li></ul></li></ul></li></ul></li><li><p><a href="changelog/#x-28BARISTA-DOCS-2FCHANGELOG-3A-40CHANGELOG-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29" data-document="changelog/" data-node="x-28BARISTA-DOCS-2FCHANGELOG-3A-40CHANGELOG-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29">ChangeLog</a></p></li></ul>
+     </div>
+    </div><div class=footer>
+     <a href="https://40ants.com/doc">[generated by 40ANTS-DOC]</a>
+    </div>
+   </div><div class=content role=main><h1>Barista — a macOS menu-bar application framework in Common Lisp.<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-40INDEX-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-40INDEX-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h1><h2 id="barista-asdf-system-details">BARISTA ASDF System Details</h2><ul><li><p>Description: mac<code>OS</code> menu-bar application framework in Common Lisp (<code>SBCL</code>/<code>CFFI</code>)</p></li><li><p>Depends on: <a href="https://quickdocs.org/40ants-logging">40ants-logging</a>, <a href="https://quickdocs.org/alexandria">alexandria</a>, <a href="https://quickdocs.org/bordeaux-threads">bordeaux-threads</a>, <a href="https://quickdocs.org/cffi">cffi</a>, <a href="https://quickdocs.org/cl-colors">cl-colors</a>, <a href="https://quickdocs.org/cxml">cxml</a>, <a href="https://quickdocs.org/defmain">defmain</a>, <a href="https://quickdocs.org/dexador">dexador</a>, <a href="https://quickdocs.org/fmt">fmt</a>, <a href="https://quickdocs.org/local-time">local-time</a>, <a href="https://quickdocs.org/local-time-duration">local-time-duration</a>, <a href="https://quickdocs.org/log4cl">log4cl</a>, <a href="https://quickdocs.org/log4cl-extras">log4cl-extras</a>, <a href="https://quickdocs.org/slynk">slynk</a>, <a href="https://quickdocs.org/swank">swank</a>, <a href="https://quickdocs.org/trivial-main-thread">trivial-main-thread</a>, <a href="https://quickdocs.org/ubiquitous">ubiquitous</a>, <a href="https://quickdocs.org/uiop">uiop</a>, <a href="https://quickdocs.org/zpng">zpng</a></p></li></ul><p>Barista is a mac<code>OS</code> menu-bar application framework written in Common Lisp.
+It lets you display live information — text, emojis, icons, or dynamically
+rendered images — in the mac<code>OS</code> status bar.</p><p>Plugins run as threads inside a single Lisp process and communicate with
+AppKit via Grand Central Dispatch (<code>GCD</code>). Each plugin gets its own
+<code>NSStatusItem</code> with an icon and a dropdown menu.</p><p>This is similar to <a href="https://github.com/matryer/xbar">XBar</a> and
+<a href="http://richsomerfield.com/apps/textbar/">TextBar</a>, but with key advantages:</p><table><tr><td><p>Feature</p></td><td><p>XBar</p></td><td><p>Barista</p></td></tr><tr><td><p>Plugin execution</p></td><td><p>Subprocess per refresh</p></td><td><p>Threads in one Lisp process</p></td></tr><tr><td><p>State persistence</p></td><td><p>External storage</p></td><td><p>All in memory</p></td></tr><tr><td><p>Plugin language</p></td><td><p>Any (mostly Bash)</p></td><td><p>Common Lisp</p></td></tr><tr><td><p>Menu API</p></td><td><p>Text-based</p></td><td><p>Programmatic DSL + ObjC interop</p></td></tr><tr><td><p>Debugging</p></td><td><p>None</p></td><td><p>Live REPL via SLYNK/SWANK</p></td></tr></table><p>Because plugins are Lisp code running in the same process, you can connect
+your <code>IDE</code> (<code>SLIME</code>/<code>SLY</code>) to the running Barista instance and debug plugins
+interactively.</p><h2>Introduction<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40INTRODUCTION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40INTRODUCTION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h2><p><img src="./docs/images/pomodoro.gif"></p><p>Barista turns the mac<code>OS</code> menu bar into a live Lisp-powered dashboard.</p><p>A <b>plugin</b> is a Common Lisp class defined with the <code>defplugin</code> macro.
+Each plugin can:</p><ul><li><p>Display a <b>text label</b> (plain string, emoji, or attributed string with
+  colors and fonts) as its status-bar icon.</p></li><li><p>Display an <b>image icon</b> (<code>PNG</code> or <code>ICNS</code> file, or a dynamically rendered
+  <code>NSImage</code>).</p></li><li><p>Run <b>background worker threads</b> on a schedule (every N seconds, minutes,
+  or hours).</p></li><li><p>Show a <b>dropdown menu</b> when the user clicks the icon — built either
+  declaratively at compile time (<code>defmenu</code>) or dynamically at runtime
+  (<code>build-menu</code>).</p></li></ul><h3 id="how-it-works">How it works</h3><p>Barista loads user plugins from <code>~/.config/barista/plugins/</code> at startup,
+then initializes AppKit on the mac<code>OS</code> main thread and enters the
+<code>[NSApp run]</code> event loop. Worker threads update <code>NSStatusItem</code> objects via
+<code>GCD</code> (<code>dispatch_async</code> on the main queue), ensuring all <code>UI</code> mutations happen
+on the main thread.</p><h3 id="key-features">Key features</h3><ul><li><p><b>In-memory state</b> — no external files or databases; plugin state lives
+  in <code>CLOS</code> slots for the lifetime of the process.</p></li><li><p><b>Programmatic menus</b> — build menus with Lisp closures, not text formats.
+  Items support callbacks, submenus, checkmarks, and opening <code>URL</code>s.</p></li><li><p><b>Dynamic icons</b> — render images at runtime (e.g. bar-chart graphs) and
+  update them from worker threads.</p></li><li><p><b>Live debugging</b> — connect <code>SLIME</code>/<code>SLY</code> to the running process and inspect
+  or modify plugins on the fly.</p></li><li><p><b>Configuration persistence</b> — plugin enable/disable state is saved to
+  <code>~/.config/barista/settings.lisp</code> and restored on launch.</p></li></ul><h2>Installation<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40INSTALLATION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40INSTALLATION-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h2><h3 id="from-a-pre-built-release">From a pre-built release</h3><p>Download the latest <code>Barista-x.y.z.dmg</code> from the
+<a href="https://github.com/40ants/barista/releases">GitHub Releases</a> page,
+open it and drag <b>Barista.app</b> to your <b>Applications</b> folder.</p><p>Because the app is not signed with an Apple Developer certificate, mac<code>OS</code>
+will attach a quarantine flag to it when downloaded from the internet and
+refuse to open it with a <i>&quot;Barista is damaged and can't be opened&quot;</i> message.</p><p>To remove the quarantine flag, run the following command in Terminal after
+copying the app to <code>/Applications</code>:</p><pre><code class="">xattr -dr com.apple.quarantine /Applications/Barista.app</code></pre><p>Then open the app normally.</p><h3 id="build-from-source">Build from source</h3><p>Barista uses <a href="https://github.com/fukamachi/qlot">Qlot</a> for dependency
+management and <a href="https://github.com/roswell/roswell">Roswell</a> for building.</p><pre><code class="">git clone https://github.com/40ants/barista.git
+cd barista
+qlot install
+./build.sh</code></pre><p>This produces <code>dist/Barista.app</code>. To also copy it to <code>/Applications</code>:</p><pre><code class="">INSTALL=1 ./build.sh</code></pre><h3 id="running-with-a-repl">Running with a REPL</h3><p>You can connect your <code>IDE</code> to a running Barista instance for live debugging:</p><pre><code class=""># From the built executable:
+./dist/Barista.app/Contents/MacOS/barista --slynk
+./dist/Barista.app/Contents/MacOS/barista --slynk --port 4005
+
+# From source via Roswell:
+qlot exec ros app.ros --slynk</code></pre><p>Connect from <code>SLY</code>:</p><pre><code class="">M-x sly-connect RET 127.0.0.1 RET 5007 RET</code></pre><p><code>SLIME</code> is also supported via the <code>--swank</code> flag. Default port is 5007.
+Logs are written to <code>/tmp/barista.log</code>.</p><h2>Available Plugins<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40AVAILABLE-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40AVAILABLE-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h2><p>Barista ships with several bundled plugins. Enable or disable them from
+the menu-bar icon → <b>Plugins</b> submenu (visible when no other plugin is
+active, or via Alt-click on any plugin icon).</p><h3 id="pomodoro">Pomodoro</h3><p>A <a href="https://en.wikipedia.org/wiki/Pomodoro_Technique">Pomodoro Technique</a>
+timer. Shows a tomato emoji (🍅) when idle and a countdown when running.
+Choose 5, 15, or 25 minute intervals from the dropdown menu. The countdown
+turns red in the last 3 minutes. A mac<code>OS</code> notification fires when the timer
+starts and stops.</p><h3 id="clipboard">Clipboard</h3><p>A clipboard history manager. Polls the system pasteboard every second and
+keeps the last 10 copied items. Click the icon (📋) to see the history;
+click any item to copy it back to the clipboard. Includes a &quot;Clear history&quot;
+option.</p><h3 id="currency">Currency</h3><p>Displays <code>USD</code> and <code>EUR</code> exchange rates from the
+<a href="https://www.cbr.ru/">Central Bank of Russia</a> daily <code>XML</code> feed. The status-bar
+label flips between <code>$</code> and <code>€</code> rates every 5 seconds. Rates are fetched on
+startup and refreshed every 30 minutes. The dropdown menu shows both rates
+side by side.</p><h3 id="system-monitor">System Monitor</h3><p>Shows real-time <code>CPU</code>, <code>GPU</code>, and memory usage as a colored bar-chart icon in
+the status bar (rendered dynamically as a <code>PNG</code>). The dropdown menu displays
+numeric percentages for each metric. Colors change from green to orange to
+red as usage increases. Metrics are read directly from Mach/<code>IOK</code>it <code>API</code>s via
+<code>CFFI</code> — no external commands.</p><h3 id="community-plugins">Community Plugins</h3><ul><li><p><a href="https://github.com/svetlyak40wt/barista-zai-quota">barista-zai-quota</a> —
+  Shows <a href="https://z.ai">Z.AI</a> Coding Plan token quota (5-hour and weekly) as a
+  colored bar-chart icon.</p></li></ul><h2>Writing Custom Plugins<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40WRITING-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40WRITING-PLUGINS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h2><p>Plugins live as <code>.lisp</code> files in <code>~/.config/barista/plugins/</code>. Each file is
+loaded at startup before AppKit initialises.</p><h3 id="minimal-text-plugin">Minimal text plugin</h3><p>The simplest plugin shows a text label and updates it on a schedule:</p><pre><code class="lisp">(defpackage #:my-plugins/clock
+  (:use #:cl)
+  (:import-from #:barista/plugin
+                #:defplugin
+                #:get-title)
+  (:import-from #:barista/vars
+                #:*plugin*))
+(in-package #:my-plugins/clock)
+
+(defplugin clock ()
+  (:title &quot;🕐&quot;)
+  (:every :minute
+    (setf (get-title *plugin*)
+          (local-time:format-timestring nil (local-time:now)
+                                        :format '(:hour &quot;:&quot; (:min 2))))))</code></pre><h3 id="defplugin-options">defplugin options</h3><p>The <code>defplugin</code> macro accepts the following options:</p><ul><li><p><code>(:title EXPR)</code> — initial menu-bar label. May be a plain string, an emoji,
+  or an <code>NSAttributedString</code> built with <code>make-attributed-string</code> /
+  <code>join-attributed-string</code>.</p></li><li><p><code>(:image PATH &amp;key size template)</code> — display a <code>PNG</code> or <code>ICNS</code> file as the
+  status-bar icon. <code>:size</code> scales the image (default 18). <code>:template t</code>
+  marks it as a template image so mac<code>OS</code> adapts it to dark/light mode.
+  Takes precedence over <code>:title</code>.</p></li><li><p><code>(:menu SYMBOL)</code> — name of a <code>defmenu</code> form to display on click.</p></li><li><p><code>(:every PERIOD FORMS…)</code> — starts a background worker thread. <code>PERIOD</code> is
+  a keyword (<code>:second</code>, <code>:minute</code>, <code>:hour</code>) or a list like <code>(15 :seconds)</code>.</p></li></ul><p>You can define custom slots on the plugin class by listing them after the
+plugin name, just like <code>defclass</code>:</p><pre><code class="lisp">(defplugin my-plugin
+    ((counter :initform 0 :accessor get-counter))
+  (:title &quot;0&quot;)
+  (:every :second
+    (incf (get-counter *plugin*))
+    (setf (get-title *plugin*)
+          (format nil &quot;~D&quot; (get-counter *plugin*)))))</code></pre><h3 id="image-icon-plugin">Image icon plugin</h3><pre><code class="lisp">(defpackage #:my-plugins/status
+  (:use #:cl)
+  (:import-from #:barista/plugin
+                #:defplugin
+                #:get-image)
+  (:import-from #:barista/vars
+                #:*plugin*))
+(in-package #:my-plugins/status)
+
+;; Colour icon — pixels render as-is (default).
+(defplugin status-colour ()
+  (:image #p&quot;~/.config/barista/icons/my-icon.png&quot; :size 18))
+
+;; Monochrome/symbolic icon — macOS recolours it for dark/light mode.
+(defplugin status-mono ()
+  (:image #p&quot;~/.config/barista/icons/mono-icon.png&quot; :size 18 :template t))</code></pre><p>You can also update the icon at runtime from a worker thread:</p><pre><code class="lisp">(:every (30 :seconds)
+  (let ((icon-path (render-current-state-to-png)))
+    (setf (get-image *plugin*) icon-path)))</code></pre><p><code>setf get-image</code> accepts a pathname, a namestring, or an <code>NSImage</code> pointer.</p><h3 id="menus">Menus</h3><p>There are two ways to define a dropdown menu.</p><p><b>Declarative</b> — <code>defmenu</code> (compile-time, static structure):</p><pre><code class="lisp">(defmenu start
+    ((&quot;Start 5 min&quot;  :callback (lambda () (start 5)))
+     (&quot;Start 15 min&quot; :callback (lambda () (start 15)))
+     (&quot;---&quot;)
+     (&quot;Help&quot;         :url &quot;https://example.com&quot;)))</code></pre><p>Item spec: <code>(title &amp;key callback submenu url state disabled)</code>.
+* <code>&quot;---&quot;</code> adds a separator.
+* <code>:callback</code> is a zero-argument function called on click.
+* <code>:submenu</code> is a symbol naming another <code>defmenu</code>.
+* <code>:url</code> opens a <code>URL</code> in the default browser.
+* <code>:state t</code> shows a native checkmark.
+* <code>:disabled t</code> greys out the item.</p><p><b>Imperative</b> — <code>build-menu</code> / <code>add-item</code> (runtime, dynamic structure):</p><pre><code class="lisp">(defun build-my-menu (plugin)
+  (build-menu
+    (dolist (item (get-items plugin))
+      (add-item item :callback (make-item-callback item)))
+    (add-separator)
+    (add-item &quot;Clear&quot; :callback (lambda () (clear plugin)))))</code></pre><p>Use <code>build-menu</code> when the menu structure depends on runtime data.</p><h3 id="dynamic-menu-wiring">Dynamic menu wiring</h3><p>When a plugin needs a dynamic menu (built at runtime), wire up the
+<code>menu-thunk</code> on the first worker tick instead of using the <code>:menu</code> option:</p><pre><code class="lisp">(defplugin my-plugin
+    ((menu-ready :initform nil :accessor get-menu-ready))
+  (:title &quot;Data&quot;)
+  (:every (5 :seconds)
+    (unless (get-menu-ready *plugin*)
+      (setf (barista/classes:get-menu-thunk
+             (barista/plugin:get-status-item *plugin*))
+            (let ((p *plugin*))
+              (lambda () (build-dynamic-menu p))))
+      (setf (get-menu-ready *plugin*) t))
+    (update-data *plugin*)))</code></pre><p>This pattern is used by the clipboard, currency, and system-monitor plugins.</p><h3 id="the-plugin-variable">The <i>plugin</i> variable</h3><p><code>barista/vars:*plugin*</code> is the central context variable. It is bound inside
+worker threads, menu thunks, and menu callbacks automatically. Always use it
+to access the current plugin instance:</p><pre><code class="lisp">(setf (get-title *plugin*) &quot;Updated!&quot;)
+(setf (get-image *plugin*) #p&quot;/path/to/icon.png&quot;)</code></pre><h3 id="switching-menus-at-runtime">Switching menus at runtime</h3><p>Use <code>replace-menu</code> to swap the dropdown menu of a running plugin:</p><pre><code class="lisp">(barista/plugin:replace-menu start-menu-symbol stop-menu-symbol)</code></pre><p>This replaces the <code>menu-thunk</code> on the status item.</p><h3 id="enabling-plugins">Enabling plugins</h3><p>On first launch Barista shows a system icon in the menu bar. Click it and
+choose <b>Plugins</b> to enable the plugins you want. The selection is saved
+to <code>~/.config/barista/settings.lisp</code> and restored on every subsequent launch.</p><p>You can also Alt-click any plugin icon to access a maintenance menu with
+options to restart all plugins or quit Barista.</p><h2>API<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40API-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40API-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h2><h3>BARISTA/CLASSES<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2815-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCLASSES-22-29-20PACKAGE-29 id=x-28-23A-28-2815-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCLASSES-22-29-20PACKAGE-29>barista/classes</a></div></div><a class=bullet-link href=#x-28-23A-28-2815-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCLASSES-22-29-20PACKAGE-29></a></div></div><h4>Classes<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FClasses-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FClasses-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><h5>STATUS-ITEM<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-24STATUS-ITEM-3FCLASS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCLASSES-24STATUS-ITEM-3FCLASS-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h5><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L63">class</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3ASTATUS-ITEM-20CLASS-29 id=x-28BARISTA-2FCLASSES-3ASTATUS-ITEM-20CLASS-29>barista/classes:status-item</a></div><div class=object-args><span class=locative-args></span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3ASTATUS-ITEM-20CLASS-29></a></div><div class=bullet-content><p>Wraps an <code>NSS</code>tatusItem for one Barista plugin.</p></div></div><p><b>Readers</b></p><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L67">reader</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-button-address</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(= nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Integer pointer address of the <code>NSS</code>tatusBarButton,
+captured at initialisation time and used for <i>click-table</i> keying and cleanup.
+Storing it avoids calling (send ns-item &quot;button&quot;) on a potentially-released
+object during hide.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L77">reader</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-menu-thunk</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(:menu-thunk = nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Nullary function that builds and returns an <code>NSM</code>enu pointer.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L64">reader</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-ns-status-item</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(= nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Raw <code>CFFI</code> pointer to the AppKit <code>NSS</code>tatusItem.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L81">reader</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:system-item-p</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(:system-item-p = nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AREADER-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>When T, this is the system plugin item.
+The click handler skips appending the Settings/Quit section to its menu
+because it already is the Settings menu.</p></div></div><p><b>Accessors</b></p><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L67">accessor</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-button-address</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(= nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-BUTTON-ADDRESS-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Integer pointer address of the <code>NSS</code>tatusBarButton,
+captured at initialisation time and used for <i>click-table</i> keying and cleanup.
+Storing it avoids calling (send ns-item &quot;button&quot;) on a potentially-released
+object during hide.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L77">accessor</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-menu-thunk</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(:menu-thunk = nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-MENU-THUNK-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Nullary function that builds and returns an <code>NSM</code>enu pointer.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L64">accessor</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:get-ns-status-item</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(= nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-NS-STATUS-ITEM-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>Raw <code>CFFI</code> pointer to the AppKit <code>NSS</code>tatusItem.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L81">accessor</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29 id=x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29>barista/classes:system-item-p</a></div><div class=object-args><span class=locative-args></span><span class=locative-args>(:system-item-p = nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3ASYSTEM-ITEM-P-20-2840ANTS-DOC-2FLOCATIVES-3AACCESSOR-20BARISTA-2FCLASSES-3ASTATUS-ITEM-29-29></a></div><div class=bullet-content><p>When T, this is the system plugin item.
+The click handler skips appending the Settings/Quit section to its menu
+because it already is the Settings menu.</p></div></div><h4>Generics<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L59">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29>barista/classes:get-image</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Return the current status-bar icon of <code>PLUGIN</code>.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L89">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-TITLE-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AGET-TITLE-20GENERIC-FUNCTION-29>barista/classes:get-title</a></div><div class=object-args><span class=locative-args>item</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-TITLE-20GENERIC-FUNCTION-29></a></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCLASSES-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L294">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-STRING-FORM-FOR-MACRO-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AGET-STRING-FORM-FOR-MACRO-20FUNCTION-29>barista/classes:get-string-form-for-macro</a></div><div class=object-args><span class=locative-args>string</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-STRING-FORM-FOR-MACRO-20FUNCTION-29></a></div><div class=bullet-content><p>Return a compile-time form that evaluates to an <code>NSS</code>tring or <code>NSA</code>ttributedString.
+Called by defmenu/build-menu macros to process user-supplied title values.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L262">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AJOIN-ATTRIBUTED-STRING-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AJOIN-ATTRIBUTED-STRING-20FUNCTION-29>barista/classes:join-attributed-string</a></div><div class=object-args><span class=locative-args>&amp;rest parts</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AJOIN-ATTRIBUTED-STRING-20FUNCTION-29></a></div><div class=bullet-content><p>Concatenate <code>PARTS</code> into a single <code>NSM</code>utableAttributedString.
+Each part may be a plain string, a (text :color ... :font ... :size ...) list,
+or an existing <code>NSA</code>ttributedString pointer.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L244">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AMAKE-ATTRIBUTED-STRING-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AMAKE-ATTRIBUTED-STRING-20FUNCTION-29>barista/classes:make-attributed-string</a></div><div class=object-args><span class=locative-args>text &amp;key font color (size +default-font-size+)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AMAKE-ATTRIBUTED-STRING-20FUNCTION-29></a></div><div class=bullet-content><p>Create an <code>NSA</code>ttributedString from <code>TEXT</code> with optional <code>FONT</code>, <code>COLOR</code>, and <code>SIZE</code>.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L236">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AMAKE-DEFAULT-FONT-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AMAKE-DEFAULT-FONT-20FUNCTION-29>barista/classes:make-default-font</a></div><div class=object-args><span class=locative-args>size</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AMAKE-DEFAULT-FONT-20FUNCTION-29></a></div><div class=bullet-content><p>Return the standard menu font at <code>SIZE</code> points.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L221">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AMAKE-FONT-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AMAKE-FONT-20FUNCTION-29>barista/classes:make-font</a></div><div class=object-args><span class=locative-args>name &amp;key (size +default-font-size+)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AMAKE-FONT-20FUNCTION-29></a></div><div class=bullet-content><p>Return an <code>NSF</code>ont for <code>NAME</code> at <code>SIZE</code> points, or <code>NIL</code> if the font is unknown.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/classes.lisp#L114">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AMAKE-NS-IMAGE-20FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AMAKE-NS-IMAGE-20FUNCTION-29>barista/classes:make-ns-image</a></div><div class=object-args><span class=locative-args>path &amp;key (size nil) (template nil)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AMAKE-NS-IMAGE-20FUNCTION-29></a></div><div class=bullet-content><p>Load an <code>NSI</code>mage from <code>PATH</code> (pathname or string).
+<code>PATH</code> may be a <code>CL</code> pathname or a namestring.</p><p>Keyword arguments:
+  <code>SIZE</code>     -- when non-<code>NIL</code>, a number; calls setSize: with <code>SIZE</code> x <code>SIZE</code> points.
+  <code>TEMPLATE</code> -- when T, marks the image as a template image so mac<code>OS</code> adapts
+              it to the current appearance (dark/light mode).  Use T only
+              for monochrome/symbolic icons.  For colour images leave <code>NIL</code>
+              (the default) so pixels render as-is.</p><p>Returns the <code>NSI</code>mage pointer, or <code>NIL</code> if the file could not be loaded.</p></div></div><h3>BARISTA/CONFIG<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCONFIG-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FCONFIG-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/config.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCONFIG-22-29-20PACKAGE-29 id=x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCONFIG-22-29-20PACKAGE-29>barista/config</a></div></div><a class=bullet-link href=#x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FCONFIG-22-29-20PACKAGE-29></a></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCONFIG-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FCONFIG-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/config.lisp#L74">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCONFIG-3AENABLED-PLUGIN-NAMES-20FUNCTION-29 id=x-28BARISTA-2FCONFIG-3AENABLED-PLUGIN-NAMES-20FUNCTION-29>barista/config:enabled-plugin-names</a></div></div><a class=bullet-link href=#x-28BARISTA-2FCONFIG-3AENABLED-PLUGIN-NAMES-20FUNCTION-29></a></div><div class=bullet-content><p>Return a list of plugin name keywords that are enabled in the config.
+Only keys explicitly set to T are included.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/config.lisp#L58">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCONFIG-3APLUGIN-ENABLED-P-20FUNCTION-29 id=x-28BARISTA-2FCONFIG-3APLUGIN-ENABLED-P-20FUNCTION-29>barista/config:plugin-enabled-p</a></div><div class=object-args><span class=locative-args>plugin-name</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCONFIG-3APLUGIN-ENABLED-P-20FUNCTION-29></a></div><div class=bullet-content><p>Return T if <code>PLUGIN-NAME</code> is enabled in the configuration.
+Defaults to <code>NIL</code> (disabled) when no value is stored -- this ensures a
+clean first-run experience where the system plugin is shown instead.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/config.lisp#L28">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCONFIG-3ARESTORE-CONFIG-20FUNCTION-29 id=x-28BARISTA-2FCONFIG-3ARESTORE-CONFIG-20FUNCTION-29>barista/config:restore-config</a></div></div><a class=bullet-link href=#x-28BARISTA-2FCONFIG-3ARESTORE-CONFIG-20FUNCTION-29></a></div><div class=bullet-content><p>Load Barista configuration from disk.
+If the file does not exist (first launch), bootstraps an empty storage and
+points <i>storage-pathname</i> at the target path so that subsequent
+(setf (value ...)) calls persist to the correct file.</p><p>Note: when handler-case catches no-storage-file, ubiquitous leaves
+<i>storage-pathname</i> pointing at its default global path and does <code>NOT</code> set
+it to the requested path.  We must set both <i>storage-pathname</i> and
+<i>storage</i> explicitly to make offload work correctly later.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/config.lisp#L67">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCONFIG-3ASET-PLUGIN-ENABLED-20FUNCTION-29 id=x-28BARISTA-2FCONFIG-3ASET-PLUGIN-ENABLED-20FUNCTION-29>barista/config:set-plugin-enabled</a></div><div class=object-args><span class=locative-args>plugin-name enabled-p</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCONFIG-3ASET-PLUGIN-ENABLED-20FUNCTION-29></a></div><div class=bullet-content><p>Persist the enabled/disabled state for <code>PLUGIN-NAME</code>.
+ubiquitous automatically writes to disk after each (setf value).</p></div></div><h3>BARISTA/MAIN<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMAIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMAIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/main.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMAIN-22-29-20PACKAGE-29 id=x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMAIN-22-29-20PACKAGE-29>barista/main</a></div></div><a class=bullet-link href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMAIN-22-29-20PACKAGE-29></a></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMAIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMAIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/main.lisp#L36">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMAIN-3ALOAD-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FMAIN-3ALOAD-PLUGINS-20FUNCTION-29>barista/main:load-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FMAIN-3ALOAD-PLUGINS-20FUNCTION-29></a></div><div class=bullet-content><p>Load all user plugin files from ~/.config/barista/plugins/.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/main.lisp#L58">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMAIN-3AMAIN-20FUNCTION-29 id=x-28BARISTA-2FMAIN-3AMAIN-20FUNCTION-29>barista/main:main</a></div><div class=object-args><span class=locative-args>&amp;rest argv</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMAIN-3AMAIN-20FUNCTION-29></a></div><div class=bullet-content><p>Start the Barista menu-bar application.</p><p>Loads user plugins, initialises AppKit on mac<code>OS</code> thread 0 via
+trivial-main-thread, and enters the AppKit event loop (never returns
+normally).</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/main.lisp#L43">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMAIN-3ASTART-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FMAIN-3ASTART-PLUGINS-20FUNCTION-29>barista/main:start-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FMAIN-3ASTART-PLUGINS-20FUNCTION-29></a></div><div class=bullet-content><p>Instantiate and start all registered plugins regardless of config.
+Must be called on the AppKit main thread.
+<code>NOTE</code>: Prefer start-enabled-plugins for normal startup.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/main.lisp#L50">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMAIN-3ASTOP-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FMAIN-3ASTOP-PLUGINS-20FUNCTION-29>barista/main:stop-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FMAIN-3ASTOP-PLUGINS-20FUNCTION-29></a></div><div class=bullet-content><p>Stop all currently running plugins.</p></div></div><h3>BARISTA/MENU<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMENU-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FMENU-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMENU-22-29-20PACKAGE-29 id=x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMENU-22-29-20PACKAGE-29>barista/menu</a></div></div><a class=bullet-link href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FMENU-22-29-20PACKAGE-29></a></div></div><h4>Generics<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L221">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AHIDE-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FMENU-3AHIDE-20GENERIC-FUNCTION-29>barista/menu:hide</a></div><div class=object-args><span class=locative-args>item</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AHIDE-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Remove <code>ITEM</code> from the status bar and release the <code>NSS</code>tatusItem.</p></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L346">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AADD-ITEM-20FUNCTION-29 id=x-28BARISTA-2FMENU-3AADD-ITEM-20FUNCTION-29>barista/menu:add-item</a></div><div class=object-args><span class=locative-args>title &amp;key callback submenu url state disabled</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AADD-ITEM-20FUNCTION-29></a></div><div class=bullet-content><p>Add an item to the menu currently being built by build-menu.
+Must be called inside a build-menu body.
+<code>STATE</code>:    when T sets the native mac<code>OS</code> checkmark (<code>NSC</code>ontrolStateValueOn).
+<code>DISABLED</code>: when T greys out the item and makes it non-interactive.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L360">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AADD-SEPARATOR-20FUNCTION-29 id=x-28BARISTA-2FMENU-3AADD-SEPARATOR-20FUNCTION-29>barista/menu:add-separator</a></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AADD-SEPARATOR-20FUNCTION-29></a></div><div class=bullet-content><p>Add a native <code>NSM</code>enuItem separator to the menu currently being built.
+Must be called inside a build-menu body.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L175">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-20FUNCTION-29 id=x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-20FUNCTION-29>barista/menu:initialize-status-item</a></div><div class=object-args><span class=locative-args>item</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-20FUNCTION-29></a></div><div class=bullet-content><p>Create the AppKit <code>NSS</code>tatusItem for the barista/classes:status-item <code>ITEM</code>.
+Must be called on the AppKit main thread.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L399">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-WITH-IMAGE-20FUNCTION-29 id=x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-WITH-IMAGE-20FUNCTION-29>barista/menu:initialize-status-item-with-image</a></div><div class=object-args><span class=locative-args>ITEM IMAGE-PATH &amp;KEY (SIZE 18.0d0) TEMPLATE</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AINITIALIZE-STATUS-ITEM-WITH-IMAGE-20FUNCTION-29></a></div><div class=bullet-content><p>Like initialize-status-item but uses an image file instead of a text title.
+<code>IMAGE-PATH</code> is a <code>CL</code> pathname or namestring to a <code>PNG</code>/<code>ICNS</code> file.
+<code>SIZE</code>     -- desired icon size in points (default 18); passed to make-ns-image.
+<code>TEMPLATE</code> -- when T, marks the image as a template (monochrome/symbolic icons
+            that should adapt to dark/light mode).  Leave <code>NIL</code> (default) for
+            colour images so pixels are rendered as-is.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L378">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3AMAKE-MENU-20FUNCTION-29 id=x-28BARISTA-2FMENU-3AMAKE-MENU-20FUNCTION-29>barista/menu:make-menu</a></div><div class=object-args><span class=locative-args>name-or-menu</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3AMAKE-MENU-20FUNCTION-29></a></div><div class=bullet-content><p>Return an <code>NSM</code>enu pointer for <code>NAME-OR-MENU</code>.
+<code>NAME-OR-MENU</code> may be a symbol (looked up in <i>menu-constructors</i> or as a
+function), or an already-built <code>NSM</code>enu <code>CFFI</code> pointer.</p></div></div><h4>Macros<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FMENU-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L369">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3ABUILD-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FMENU-3ABUILD-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/menu:build-menu</a></div><div class=object-args><span class=locative-args>&amp;body body</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3ABUILD-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div><div class=bullet-content><p>Evaluate <code>BODY</code> with <i>current-menu</i> bound to a fresh <code>NSM</code>enu, then return it.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/menu.lisp#L320">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FMENU-3ADEFMENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FMENU-3ADEFMENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/menu:defmenu</a></div><div class=object-args><span class=locative-args>name (&amp;rest items)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FMENU-3ADEFMENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div><div class=bullet-content><p>Define a named menu constructor and register it in <i>menu-constructors</i>.</p><p>Example:
+  (defmenu my-menu
+      ((&quot;Item one&quot; :callback #'handler)
+       (&quot;Item two&quot; :url &quot;https://example.com&quot;)))</p></div></div><h3>BARISTA/PLUGIN<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FPLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FPLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FPLUGIN-22-29-20PACKAGE-29 id=x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FPLUGIN-22-29-20PACKAGE-29>barista/plugin</a></div></div><a class=bullet-link href=#x-28-23A-28-2814-29-20BASE-CHAR-20-2E-20-22BARISTA-2FPLUGIN-22-29-20PACKAGE-29></a></div></div><h4>Generics<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FGenerics-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L59">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29>barista/classes:get-image</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FCLASSES-3AGET-IMAGE-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Return the current status-bar icon of <code>PLUGIN</code>.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L62">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AGET-MENU-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AGET-MENU-20GENERIC-FUNCTION-29>barista/plugin:get-menu</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AGET-MENU-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Return the menu-thunk of <code>PLUGIN</code>'s status item.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L65">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AGET-STATUS-ITEM-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AGET-STATUS-ITEM-20GENERIC-FUNCTION-29>barista/plugin:get-status-item</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AGET-STATUS-ITEM-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Return the <a href="https://40ants.com/barista/#x-28BARISTA-2FCLASSES-3ASTATUS-ITEM-20CLASS-29" data-document="https://40ants.com/barista/" data-node="x-28BARISTA-2FCLASSES-3ASTATUS-ITEM-20CLASS-29"><code>barista/classes:status-item</code></a> wrapper of <code>PLUGIN</code>.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L56">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AGET-TITLE-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AGET-TITLE-20GENERIC-FUNCTION-29>barista/plugin:get-title</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AGET-TITLE-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Return the current status-bar label of <code>PLUGIN</code>.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L136">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AINITIALIZE-PLUGIN-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AINITIALIZE-PLUGIN-20GENERIC-FUNCTION-29>barista/plugin:initialize-plugin</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AINITIALIZE-PLUGIN-20GENERIC-FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L124">generic-function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ASTOP-PLUGIN-20GENERIC-FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ASTOP-PLUGIN-20GENERIC-FUNCTION-29>barista/plugin:stop-plugin</a></div><div class=object-args><span class=locative-args>plugin</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ASTOP-PLUGIN-20GENERIC-FUNCTION-29></a></div><div class=bullet-content><p>Stop <code>PLUGIN</code>, dispatching to the AppKit main thread via <code>GCD</code>.</p></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L142">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AGET-AVAILABLE-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AGET-AVAILABLE-PLUGINS-20FUNCTION-29>barista/plugin:get-available-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AGET-AVAILABLE-PLUGINS-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L101">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AGET-PLUGIN-INSTANCE-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AGET-PLUGIN-INSTANCE-20FUNCTION-29>barista/plugin:get-plugin-instance</a></div><div class=object-args><span class=locative-args>class-name</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AGET-PLUGIN-INSTANCE-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L104">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AIS-PLUGIN-RUNNING-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3AIS-PLUGIN-RUNNING-20FUNCTION-29>barista/plugin:is-plugin-running</a></div><div class=object-args><span class=locative-args>class-name</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AIS-PLUGIN-RUNNING-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L160">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ARESTART-PLUGIN-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ARESTART-PLUGIN-20FUNCTION-29>barista/plugin:restart-plugin</a></div><div class=object-args><span class=locative-args>class-name</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ARESTART-PLUGIN-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L163">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ARESTART-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ARESTART-PLUGINS-20FUNCTION-29>barista/plugin:restart-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ARESTART-PLUGINS-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L97">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ARUNNING-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ARUNNING-PLUGINS-20FUNCTION-29>barista/plugin:running-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ARUNNING-PLUGINS-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L166">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ASTART-ENABLED-PLUGINS-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ASTART-ENABLED-PLUGINS-20FUNCTION-29>barista/plugin:start-enabled-plugins</a></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ASTART-ENABLED-PLUGINS-20FUNCTION-29></a></div><div class=bullet-content><p>Start only the plugins that are enabled in the configuration.
+Must be called directly on the AppKit main thread (not via <code>GCD</code>) so that
+all plugins are registered in <i>running-plugins</i> before the caller checks
+visibility (e.g. ensure-system-plugin).</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L154">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ASTART-PLUGIN-20FUNCTION-29 id=x-28BARISTA-2FPLUGIN-3ASTART-PLUGIN-20FUNCTION-29>barista/plugin:start-plugin</a></div><div class=object-args><span class=locative-args>class-name</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ASTART-PLUGIN-20FUNCTION-29></a></div><div class=bullet-content><p>Start <code>CLASS-NAME</code>, dispatching to the AppKit main thread via <code>GCD</code>.
+Safe to call from any thread.  Returns immediately.</p></div></div><h4>Macros<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FPLUGIN-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L251">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3ADEFPLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FPLUGIN-3ADEFPLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/plugin:defplugin</a></div><div class=object-args><span class=locative-args>name (&amp;rest slots) &amp;body options</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3ADEFPLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div><div class=bullet-content><p>Define a Barista plugin class with background workers and a menu-bar item.</p><p>Options:
+  (:title <code>EXPR</code>)                       -- initial status-bar title (text or attributed)
+  (:image <code>PATH</code> &amp;key size template)    -- status-bar icon from an image file.
+                                         <code>PATH</code> is a pathname or string evaluated
+                                         at plugin start time.
+                                         <code>SIZE</code> (default 18) scales the icon.
+                                         <code>TEMPLATE</code> T for monochrome/symbolic icons
+                                         that should adapt to dark/light mode;
+                                         leave <code>NIL</code> (default) for colour images.
+  (:menu <code>SYMBOL</code>)                      -- name of a defmenu to show on click
+  (:every <code>PERIOD</code> <code>FORMS</code>)               -- background worker: evaluate <code>FORMS</code> every <code>PERIOD</code></p><p>:title and :image are mutually exclusive; :image takes precedence when both
+are supplied.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L342">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AREPLACE-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FPLUGIN-3AREPLACE-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/plugin:replace-menu</a></div><div class=object-args><span class=locative-args>from to</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AREPLACE-MENU-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/plugin.lisp#L350">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FPLUGIN-3AWITH-PLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FPLUGIN-3AWITH-PLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/plugin:with-plugin</a></div><div class=object-args><span class=locative-args>name &amp;body body</span></div></div><a class=bullet-link href=#x-28BARISTA-2FPLUGIN-3AWITH-PLUGIN-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div><div class=bullet-content><p>Run <code>BODY</code> with barista/vars:*plugin* bound to the named running plugin.
+Useful for interactive debugging.</p></div></div><h3>BARISTA/SYSTEM-PLUGIN<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FSYSTEM-PLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FSYSTEM-PLUGIN-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2821-29-20BASE-CHAR-20-2E-20-22BARISTA-2FSYSTEM-PLUGIN-22-29-20PACKAGE-29 id=x-28-23A-28-2821-29-20BASE-CHAR-20-2E-20-22BARISTA-2FSYSTEM-PLUGIN-22-29-20PACKAGE-29>barista/system-plugin</a></div></div><a class=bullet-link href=#x-28-23A-28-2821-29-20BASE-CHAR-20-2E-20-22BARISTA-2FSYSTEM-PLUGIN-22-29-20PACKAGE-29></a></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FSYSTEM-PLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FSYSTEM-PLUGIN-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L151">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AENSURE-SYSTEM-PLUGIN-20FUNCTION-29 id=x-28BARISTA-2FSYSTEM-PLUGIN-3AENSURE-SYSTEM-PLUGIN-20FUNCTION-29>barista/system-plugin:ensure-system-plugin</a></div></div><a class=bullet-link href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AENSURE-SYSTEM-PLUGIN-20FUNCTION-29></a></div><div class=bullet-content><p>Call after start-enabled-plugins to show the system plugin when needed.
+Must be called on the AppKit main thread.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L132">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AHIDE-SYSTEM-PLUGIN-20FUNCTION-29 id=x-28BARISTA-2FSYSTEM-PLUGIN-3AHIDE-SYSTEM-PLUGIN-20FUNCTION-29>barista/system-plugin:hide-system-plugin</a></div></div><a class=bullet-link href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AHIDE-SYSTEM-PLUGIN-20FUNCTION-29></a></div><div class=bullet-content><p>Hide the system plugin status item from the menu bar.
+No-op if not visible.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L58">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AMAKE-PLUGINS-SUBMENU-20FUNCTION-29 id=x-28BARISTA-2FSYSTEM-PLUGIN-3AMAKE-PLUGINS-SUBMENU-20FUNCTION-29>barista/system-plugin:make-plugins-submenu</a></div></div><a class=bullet-link href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AMAKE-PLUGINS-SUBMENU-20FUNCTION-29></a></div><div class=bullet-content><p>Build the Settings &gt; Plugins submenu dynamically.
+Each item shows the plugin name with a native checkmark if currently enabled.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L111">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FSYSTEM-PLUGIN-3ASHOW-SYSTEM-PLUGIN-20FUNCTION-29 id=x-28BARISTA-2FSYSTEM-PLUGIN-3ASHOW-SYSTEM-PLUGIN-20FUNCTION-29>barista/system-plugin:show-system-plugin</a></div></div><a class=bullet-link href=#x-28BARISTA-2FSYSTEM-PLUGIN-3ASHOW-SYSTEM-PLUGIN-20FUNCTION-29></a></div><div class=bullet-content><p>Show the system plugin status item in the menu bar.
+Creates it on first call; no-op if already visible.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/system-plugin.lisp#L141">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AUPDATE-SYSTEM-PLUGIN-VISIBILITY-20FUNCTION-29 id=x-28BARISTA-2FSYSTEM-PLUGIN-3AUPDATE-SYSTEM-PLUGIN-VISIBILITY-20FUNCTION-29>barista/system-plugin:update-system-plugin-visibility</a></div></div><a class=bullet-link href=#x-28BARISTA-2FSYSTEM-PLUGIN-3AUPDATE-SYSTEM-PLUGIN-VISIBILITY-20FUNCTION-29></a></div><div class=bullet-content><p>Show the system plugin if no user plugins are running; hide it otherwise.
+Must be called from the AppKit main thread (via on-main-thread when in doubt).</p></div></div><h3>BARISTA/UTILS<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FUTILS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FUTILS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/utils.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2813-29-20BASE-CHAR-20-2E-20-22BARISTA-2FUTILS-22-29-20PACKAGE-29 id=x-28-23A-28-2813-29-20BASE-CHAR-20-2E-20-22BARISTA-2FUTILS-22-29-20PACKAGE-29>barista/utils</a></div></div><a class=bullet-link href=#x-28-23A-28-2813-29-20BASE-CHAR-20-2E-20-22BARISTA-2FUTILS-22-29-20PACKAGE-29></a></div></div><h4>Functions<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FFunctions-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/utils.lisp#L16">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FUTILS-3AFORMAT-DURATION-20FUNCTION-29 id=x-28BARISTA-2FUTILS-3AFORMAT-DURATION-20FUNCTION-29>barista/utils:format-duration</a></div><div class=object-args><span class=locative-args>duration &amp;optional stream</span></div></div><a class=bullet-link href=#x-28BARISTA-2FUTILS-3AFORMAT-DURATION-20FUNCTION-29></a></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/utils.lisp#L69">function</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FUTILS-3AOPEN-URL-20FUNCTION-29 id=x-28BARISTA-2FUTILS-3AOPEN-URL-20FUNCTION-29>barista/utils:open-url</a></div><div class=object-args><span class=locative-args>url</span></div></div><a class=bullet-link href=#x-28BARISTA-2FUTILS-3AOPEN-URL-20FUNCTION-29></a></div><div class=bullet-content><p>Open <code>URL</code> in the default browser via a background thread.</p></div></div><h4>Macros<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FUTILS-3FMacros-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/utils.lisp#L78">macro</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FUTILS-3AON-MAIN-THREAD-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29 id=x-28BARISTA-2FUTILS-3AON-MAIN-THREAD-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29>barista/utils:on-main-thread</a></div><div class=object-args><span class=locative-args>&amp;rest actions</span></div></div><a class=bullet-link href=#x-28BARISTA-2FUTILS-3AON-MAIN-THREAD-20-2840ANTS-DOC-2FLOCATIVES-3AMACRO-29-29></a></div><div class=bullet-content><p>Schedule <code>ACTIONS</code> to run on the AppKit main thread via <code>GCD</code>.
+Returns immediately (fire-and-forget).  Safe to call from any thread.</p></div></div><h3>BARISTA/VARS<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FVARS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-40BARISTA-2FVARS-3FPACKAGE-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h3><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/vars.lisp#L1">package</a><div class=reference-object><div class=object-name><a href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FVARS-22-29-20PACKAGE-29 id=x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FVARS-22-29-20PACKAGE-29>barista/vars</a></div></div><a class=bullet-link href=#x-28-23A-28-2812-29-20BASE-CHAR-20-2E-20-22BARISTA-2FVARS-22-29-20PACKAGE-29></a></div></div><h4>Variables<a class=header-link
+     href=#x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FVARS-3FVariables-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29
+     title="Permalink to this headline"
+     id=x-28BARISTA-DOCS-2FINDEX-3A-3A-7C-40BARISTA-2FVARS-3FVariables-SECTION-7C-2040ANTS-DOC-2FLOCATIVES-3ASECTION-29></a></h4><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/vars.lisp#L17">variable</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FVARS-3A-2ADEBUG-2A-20-28VARIABLE-29-29 id=x-28BARISTA-2FVARS-3A-2ADEBUG-2A-20-28VARIABLE-29-29>barista/vars:*debug*</a></div><div class=object-args><span class=locative-args>nil</span></div></div><a class=bullet-link href=#x-28BARISTA-2FVARS-3A-2ADEBUG-2A-20-28VARIABLE-29-29></a></div><div class=bullet-content><p>If True, then debugger will be invoked on any error in the periodic threads.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/vars.lisp#L13">variable</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FVARS-3A-2APLUGIN-2A-20-28VARIABLE-29-29 id=x-28BARISTA-2FVARS-3A-2APLUGIN-2A-20-28VARIABLE-29-29>barista/vars:*plugin*</a></div><div class=object-args><span class=locative-args>nil</span></div></div><a class=bullet-link href=#x-28BARISTA-2FVARS-3A-2APLUGIN-2A-20-28VARIABLE-29-29></a></div><div class=bullet-content><p>Current plugin.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/vars.lisp#L20">variable</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FVARS-3A-2BDEFAULT-FONT-SIZE-2B-20-28VARIABLE-29-29 id=x-28BARISTA-2FVARS-3A-2BDEFAULT-FONT-SIZE-2B-20-28VARIABLE-29-29>barista/vars:+default-font-size+</a></div><div class=object-args><span class=locative-args>14</span></div></div><a class=bullet-link href=#x-28BARISTA-2FVARS-3A-2BDEFAULT-FONT-SIZE-2B-20-28VARIABLE-29-29></a></div><div class=bullet-content><p>Default font size in points for status-bar text.</p></div></div><div class=reference-bullet><div class=reference-bullet-header><a class=locative-type href="https://github.com/40ants/barista/blob/a6ba1aa8af82cd5fe4654e86fec79e462559a53a/src/vars.lisp#L23">variable</a><div class=reference-object><div class=object-name><a href=#x-28BARISTA-2FVARS-3A-2BSUPPORTED-COLORS-2B-20-28VARIABLE-29-29 id=x-28BARISTA-2FVARS-3A-2BSUPPORTED-COLORS-2B-20-28VARIABLE-29-29>barista/vars:+supported-colors+</a></div><div class=object-args><span class=locative-args>(:aliceblue :antiquewhite :antiquewhite1 :antiquewhite2 :antiquewhite3
+ :antiquewhite4 :aquamarine :aquamarine1 :aquamarine2 :aquamarine3 :aquamarine4
+ :azure :azure1 :azure2 :azure3 :azure4 :beige :bisque :bisque1 :bisque2
+ :bisque3 :bisque4 :black :blanchedalmond :blue :blue1 :blue2 :blue3 :blue4
+ :blueviolet :brown :brown1 :brown2 :brown3 :brown4 :burlywood :burlywood1
+ :burlywood2 :burlywood3 :burlywood4 :cadetblue :cadetblue1 :cadetblue2
+ :cadetblue3 :cadetblue4 :chartreuse :chartreuse1 :chartreuse2 :chartreuse3
+ :chartreuse4 :chocolate :chocolate1 :chocolate2 :chocolate3 :chocolate4 :coral
+ :coral1 :coral2 :coral3 :coral4 :cornflowerblue :cornsilk :cornsilk1
+ :cornsilk2 :cornsilk3 :cornsilk4 :cyan :cyan1 :cyan2 :cyan3 :cyan4 :darkblue
+ :darkcyan :darkgoldenrod :darkgoldenrod1 :darkgoldenrod2 :darkgoldenrod3
+ :darkgoldenrod4 :darkgray :darkgreen :darkgrey :darkkhaki :darkmagenta
+ :darkolivegreen :darkolivegreen1 :darkolivegreen2 :darkolivegreen3
+ :darkolivegreen4 :darkorange :darkorange1 :darkorange2 :darkorange3
+ :darkorange4 :darkorchid :darkorchid1 :darkorchid2 :darkorchid3 :darkorchid4
+ :darkred :darksalmon :darkseagreen :darkseagreen1 :darkseagreen2
+ :darkseagreen3 :darkseagreen4 :darkslateblue :darkslategray :darkslategray1
+ :darkslategray2 :darkslategray3 :darkslategray4 :darkslategrey :darkturquoise
+ :darkviolet :debianred :deeppink :deeppink1 :deeppink2 :deeppink3 :deeppink4
+ :deepskyblue :deepskyblue1 :deepskyblue2 :deepskyblue3 :deepskyblue4 :dimgray
+ :dimgrey :dodgerblue :dodgerblue1 :dodgerblue2 :dodgerblue3 :dodgerblue4
+ :firebrick :firebrick1 :firebrick2 :firebrick3 :firebrick4 :floralwhite
+ :forestgreen :gainsboro :ghostwhite :gold :gold1 :gold2 :gold3 :gold4
+ :goldenrod :goldenrod1 :goldenrod2 :goldenrod3 :goldenrod4 :gray :gray0 :gray1
+ :gray10 :gray100 :gray11 :gray12 :gray13 :gray14 :gray15 :gray16 :gray17
+ :gray18 :gray19 :gray2 :gray20 :gray21 :gray22 :gray23 :gray24 :gray25 :gray26
+ :gray27 :gray28 :gray29 :gray3 :gray30 :gray31 :gray32 :gray33 :gray34 :gray35
+ :gray36 :gray37 :gray38 :gray39 :gray4 :gray40 :gray41 :gray42 :gray43 :gray44
+ :gray45 :gray46 :gray47 :gray48 :gray49 :gray5 :gray50 :gray51 :gray52 :gray53
+ :gray54 :gray55 :gray56 :gray57 :gray58 :gray59 :gray6 :gray60 :gray61 :gray62
+ :gray63 :gray64 :gray65 :gray66 :gray67 :gray68 :gray69 :gray7 :gray70 :gray71
+ :gray72 :gray73 :gray74 :gray75 :gray76 :gray77 :gray78 :gray79 :gray8 :gray80
+ :gray81 :gray82 :gray83 :gray84 :gray85 :gray86 :gray87 :gray88 :gray89 :gray9
+ :gray90 :gray91 :gray92 :gray93 :gray94 :gray95 :gray96 :gray97 :gray98
+ :gray99 :green :green1 :green2 :green3 :green4 :greenyellow :grey :grey0
+ :grey1 :grey10 :grey100 :grey11 :grey12 :grey13 :grey14 :grey15 :grey16
+ :grey17 :grey18 :grey19 :grey2 :grey20 :grey21 :grey22 :grey23 :grey24 :grey25
+ :grey26 :grey27 :grey28 :grey29 :grey3 :grey30 :grey31 :grey32 :grey33 :grey34
+ :grey35 :grey36 :grey37 :grey38 :grey39 :grey4 :grey40 :grey41 :grey42 :grey43
+ :grey44 :grey45 :grey46 :grey47 :grey48 :grey49 :grey5 :grey50 :grey51 :grey52
+ :grey53 :grey54 :grey55 :grey56 :grey57 :grey58 :grey59 :grey6 :grey60 :grey61
+ :grey62 :grey63 :grey64 :grey65 :grey66 :grey67 :grey68 :grey69 :grey7 :grey70
+ :grey71 :grey72 :grey73 :grey74 :grey75 :grey76 :grey77 :grey78 :grey79 :grey8
+ :grey80 :grey81 :grey82 :grey83 :grey84 :grey85 :grey86 :grey87 :grey88
+ :grey89 :grey9 :grey90 :grey91 :grey92 :grey93 :grey94 :grey95 :grey96 :grey97
+ :grey98 :grey99 :honeydew :honeydew1 :honeydew2 :honeydew3 :honeydew4 :hotpink
+ :hotpink1 :hotpink2 :hotpink3 :hotpink4 :indianred :indianred1 :indianred2
+ :indianred3 :indianred4 :ivory :ivory1 :ivory2 :ivory3 :ivory4 :khaki :khaki1
+ :khaki2 :khaki3 :khaki4 :lavender :lavenderblush :lavenderblush1
+ :lavenderblush2 :lavenderblush3 :lavenderblush4 :lawngreen :lemonchiffon
+ :lemonchiffon1 :lemonchiffon2 :lemonchiffon3 :lemonchiffon4 :lightblue
+ :lightblue1 :lightblue2 :lightblue3 :lightblue4 :lightcoral :lightcyan
+ :lightcyan1 :lightcyan2 :lightcyan3 :lightcyan4 :lightgoldenrod
+ :lightgoldenrod1 :lightgoldenrod2 :lightgoldenrod3 :lightgoldenrod4
+ :lightgoldenrodyellow :lightgray :lightgreen :lightgrey :lightpink :lightpink1
+ :lightpink2 :lightpink3 :lightpink4 :lightsalmon :lightsalmon1 :lightsalmon2
+ :lightsalmon3 :lightsalmon4 :lightseagreen :lightskyblue :lightskyblue1
+ :lightskyblue2 :lightskyblue3 :lightskyblue4 :lightslateblue :lightslategray
+ :lightslategrey :lightsteelblue :lightsteelblue1 :lightsteelblue2
+ :lightsteelblue3 :lightsteelblue4 :lightyellow :lightyellow1 :lightyellow2
+ :lightyellow3 :lightyellow4 :limegreen :linen :magenta :magenta1 :magenta2
+ :magenta3 :magenta4 :maroon :maroon1 :maroon2 :maroon3 :maroon4
+ :mediumaquamarine :mediumblue :mediumorchid :mediumorchid1 :mediumorchid2
+ :mediumorchid3 :mediumorchid4 :mediumpurple :mediumpurple1 :mediumpurple2
+ :mediumpurple3 :mediumpurple4 :mediumseagreen :mediumslateblue
+ :mediumspringgreen :mediumturquoise :mediumvioletred :midnightblue :mintcream
+ :mistyrose :mistyrose1 :mistyrose2 :mistyrose3 :mistyrose4 :moccasin
+ :navajowhite :navajowhite1 :navajowhite2 :navajowhite3 :navajowhite4 :navy
+ :navyblue :oldlace :olivedrab :olivedrab1 :olivedrab2 :olivedrab3 :olivedrab4
+ :orange :orange1 :orange2 :orange3 :orange4 :orangered :orangered1 :orangered2
+ :orangered3 :orangered4 :orchid :orchid1 :orchid2 :orchid3 :orchid4
+ :palegoldenrod :palegreen :palegreen1 :palegreen2 :palegreen3 :palegreen4
+ :paleturquoise :paleturquoise1 :paleturquoise2 :paleturquoise3 :paleturquoise4
+ :palevioletred :palevioletred1 :palevioletred2 :palevioletred3 :palevioletred4
+ :papayawhip :peachpuff :peachpuff1 :peachpuff2 :peachpuff3 :peachpuff4 :peru
+ :pink :pink1 :pink2 :pink3 :pink4 :plum :plum1 :plum2 :plum3 :plum4
+ :powderblue :purple :purple1 :purple2 :purple3 :purple4 :red :red1 :red2 :red3
+ :red4 :rosybrown :rosybrown1 :rosybrown2 :rosybrown3 :rosybrown4 :royalblue
+ :royalblue1 :royalblue2 :royalblue3 :royalblue4 :saddlebrown :salmon :salmon1
+ :salmon2 :salmon3 :salmon4 :sandybrown :seagreen :seagreen1 :seagreen2
+ :seagreen3 :seagreen4 :seashell :seashell1 :seashell2 :seashell3 :seashell4
+ :sienna :sienna1 :sienna2 :sienna3 :sienna4 :skyblue :skyblue1 :skyblue2
+ :skyblue3 :skyblue4 :slateblue :slateblue1 :slateblue2 :slateblue3 :slateblue4
+ :slategray :slategray1 :slategray2 :slategray3 :slategray4 :slategrey :snow
+ :snow1 :snow2 :snow3 :snow4 :springgreen :springgreen1 :springgreen2
+ :springgreen3 :springgreen4 :steelblue :steelblue1 :steelblue2 :steelblue3
+ :steelblue4 :tan :tan1 :tan2 :tan3 :tan4 :thistle :thistle1 :thistle2
+ :thistle3 :thistle4 :tomato :tomato1 :tomato2 :tomato3 :tomato4 :turquoise
+ :turquoise1 :turquoise2 :turquoise3 :turquoise4 :violet :violetred :violetred1
+ :violetred2 :violetred3 :violetred4 :wheat :wheat1 :wheat2 :wheat3 :wheat4
+ :white :whitesmoke :yellow :yellow1 :yellow2 :yellow3 :yellow4 :yellowgreen)</span></div></div><a class=bullet-link href=#x-28BARISTA-2FVARS-3A-2BSUPPORTED-COLORS-2B-20-28VARIABLE-29-29></a></div><div class=bullet-content><p>A list of supported color names.</p></div></div>
+   </div><div class=footer>
+    <hr class=separator>
+    <p class=fineprint>Created with passion by <em>40Ants</em><a class=lisp-logo
+     href="http://lisp-lang.org/">
+      <img
+           src="https://40ants.com/img/made-with-lisp.svg"></a>
+   </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Ключ для localStorage
+  const STORAGE_KEY = 'barista-docs-menu-state';
+  
+  // Загружаем сохраненное состояние меню
+  function loadMenuState() {
+    try {
+      const savedState = localStorage.getItem(STORAGE_KEY);
+      return savedState ? JSON.parse(savedState) : {};
+    } catch (e) {
+      console.error('Ошибка при загрузке состояния меню:', e);
+      return {};
+    }
+  }
+  
+  // Сохраняем текущее состояние меню
+  function saveMenuState(state) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error('Ошибка при сохранении состояния меню:', e);
+    }
+  }
+  
+  // Получаем уникальный идентификатор для пункта меню
+  function getMenuItemId(item) {
+    const link = item.querySelector('a');
+    if (!link) return null;
+    
+    // Используем текст ссылки как идентификатор
+    // Можно также использовать href, но он может меняться в зависимости от текущей страницы
+    return link.innerText.trim();
+  }
+  
+  // Загружаем сохраненное состояние
+  const menuState = loadMenuState();
+  
+  // Находим все пункты меню с подпунктами
+  const menuItems = document.querySelectorAll('.sidebar li');
+  
+  // Обрабатываем каждый пункт меню
+  menuItems.forEach(item => {
+    const subMenu = item.querySelector('ul');
+    
+    // Если у пункта есть подменю
+    if (subMenu) {
+      const itemId = getMenuItemId(item);
+      item.classList.add('has-children');
+      
+      // Восстанавливаем состояние из localStorage, если оно сохранено
+      if (itemId && menuState[itemId]) {
+        item.classList.add('expanded');
+      }
+      
+      // Добавляем обработчик клика
+      const link = item.querySelector('a');
+      if (link) {
+        link.addEventListener('click', function(e) {
+          // Останавливаем переход по ссылке только если кликнули по пункту с подменю
+          if (item.classList.contains('has-children')) {
+            e.preventDefault();
+            
+            // Переключаем класс для раскрытия/скрытия
+            item.classList.toggle('expanded');
+            
+            // Сохраняем новое состояние
+            if (itemId) {
+              if (item.classList.contains('expanded')) {
+                menuState[itemId] = true;
+              } else {
+                delete menuState[itemId];
+              }
+              saveMenuState(menuState);
+            }
+          }
+        });
+      }
+    }
+  });
+  
+  // Функция для поиска и раскрытия родителей активного пункта
+  function expandActiveItemParents() {
+    const activeItem = document.querySelector('.sidebar li.active');
+    if (activeItem) {
+      let parent = activeItem.parentElement;
+      
+      while (parent) {
+        if (parent.tagName === 'UL' && parent.parentElement && parent.parentElement.tagName === 'LI') {
+          parent.parentElement.classList.add('expanded');
+          parent.parentElement.classList.add('active-parent');
+          
+          // Сохраняем состояние активного родителя
+          const parentItem = parent.parentElement;
+          const parentId = getMenuItemId(parentItem);
+          if (parentId) {
+            menuState[parentId] = true;
+          }
+        }
+        parent = parent.parentElement;
+      }
+      
+      // Сохраняем обновленное состояние после раскрытия активных родителей
+      saveMenuState(menuState);
+    }
+  }
+  
+  // Запускаем функцию для текущей страницы
+  expandActiveItemParents();
+});
+</script>
+
+
+  </div>
+ </body>
+</html>
