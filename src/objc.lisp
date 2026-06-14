@@ -55,24 +55,31 @@
 ;;; ---- ObjC runtime C functions --------------------------------------------
 
 (cffi:defcfun ("sel_registerName"       %sel)         :pointer
+  "Register a selector name with the ObjC runtime and return its pointer."
   (name :string))
 
 (cffi:defcfun ("objc_getClass"          %cls)         :pointer
+  "Look up an ObjC class by name and return its pointer."
   (name :string))
 
 (cffi:defcfun ("objc_allocateClassPair" %alloc-class) :pointer
+  "Allocate a new ObjC class pair subclassing SUPERCLASS."
   (superclass :pointer) (name :string) (extra-bytes :size))
 
 (cffi:defcfun ("objc_registerClassPair" %reg-class)   :void
+  "Register an allocated ObjC class pair with the runtime."
   (cls :pointer))
 
 (cffi:defcfun ("class_addMethod"        %add-method)  :bool
+  "Add a method (IMP) to an ObjC class."
   (cls :pointer) (name :pointer) (imp :pointer) (types :string))
 
 (cffi:defcfun ("class_addProtocol"      %add-protocol) :bool
+  "Adopt a protocol on an ObjC class."
   (cls :pointer) (protocol :pointer))
 
 (cffi:defcfun ("objc_getProtocol"       %get-protocol) :pointer
+  "Look up an ObjC protocol by name and return its pointer."
   (name :string))
 
 

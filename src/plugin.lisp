@@ -53,6 +53,19 @@
   as argument to a start-plugin function.")
 
 
+(defgeneric get-title (plugin)
+  (:documentation "Return the current status-bar label of PLUGIN."))
+
+(defgeneric get-image (plugin)
+  (:documentation "Return the current status-bar icon of PLUGIN."))
+
+(defgeneric get-menu (plugin)
+  (:documentation "Return the menu-thunk of PLUGIN's status item."))
+
+(defgeneric get-status-item (plugin)
+  (:documentation "Return the BARISTA/CLASSES:STATUS-ITEM wrapper of PLUGIN."))
+
+
 (defclass base-plugin ()
   ((status-item :initform nil
                 :type (or barista/classes:status-item null)
