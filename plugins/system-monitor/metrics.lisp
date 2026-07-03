@@ -1,4 +1,4 @@
-(defpackage #:barista-plugins/system-monitor/metrics
+(uiop:define-package #:barista-plugins/system-monitor/metrics
   (:use #:cl)
   (:import-from #:cffi)
   (:export
@@ -84,8 +84,10 @@
 
 ;;; ---- Memory — host_statistics64 / HOST_VM_INFO64 + sysctl hw.memsize ----
 ;;;
-;;; Returns used/total bytes.
-;;; used = (total - free_pages * page_size)
+;;; Matches Activity Monitor (macOS Ventura+):
+;;;   Memory Used  = (wire + internal + compressor-page-count + speculative) × page_size
+;;;   Cached Files = purgeable-count × page_size
+;;;   App Used     = Memory Used − Cached Files
 ;;; total = sysctl("hw.memsize")
 
 (defconstant +host-vm-info64+       4)   ; HOST_VM_INFO64
@@ -118,7 +120,9 @@
   (total-uncompressed-pages-in-compressor  :uint64))
 
 (defun %memory-stats ()
-  "Return (values free-pages page-size total-bytes) via Mach + sysctl."
+  "Return (values wire-pages internal-pages compressor-pages speculative-pages
+                   external-pages purgeable-pages page-size total-bytes)
+via Mach host_statistics64 + sysctl hw.memsize."
   (cffi:with-foreign-objects ((stats '(:struct vm-statistics64))
                               (count :uint32))
     (setf (cffi:mem-ref count :uint32) +host-vm-info64-count+)
@@ -130,45 +134,59 @@
                                      :int)))
       (when (/= 0 ret)
         (error "host_statistics64 failed: kern_return_t=~A" ret))
-              (let ((free-pages (cffi:foreign-slot-value
-                           stats '(:struct vm-statistics64) 'free-count))
-              (page-size  (cffi:foreign-funcall "getpagesize" :int))
-              (total      (cffi:with-foreign-objects ((val  :int64)
-                                                      (size :size))
-                            (setf (cffi:mem-ref size :size) 8)
-                            (cffi:foreign-funcall "sysctlbyname"
-                                                  :string  "hw.memsize"
-                                                  :pointer val
-                                                  :pointer size
-                                                  :pointer (cffi:null-pointer)
-                                                  :size    0
-                                                  :int)
-                            (cffi:mem-ref val :int64))))
-          (values free-pages page-size total)))))
+      (let ((wire-pages       (cffi:foreign-slot-value
+                                stats '(:struct vm-statistics64) 'wire-count))
+            (internal-pages   (cffi:foreign-slot-value
+                                stats '(:struct vm-statistics64) 'internal-page-count))
+            (compressor-pages (cffi:foreign-slot-value
+                                stats '(:struct vm-statistics64) 'compressor-page-count))
+            (speculative-pages (cffi:foreign-slot-value
+                                 stats '(:struct vm-statistics64) 'speculative-count))
+            (external-pages   (cffi:foreign-slot-value
+                                stats '(:struct vm-statistics64) 'external-page-count))
+            (purgeable-pages  (cffi:foreign-slot-value
+                                stats '(:struct vm-statistics64) 'purgeable-count))
+            (page-size        (cffi:foreign-funcall "getpagesize" :int))
+            (total            (cffi:with-foreign-objects ((val  :int64)
+                                                          (size :size))
+                                (setf (cffi:mem-ref size :size) 8)
+                                (cffi:foreign-funcall "sysctlbyname"
+                                                      :string  "hw.memsize"
+                                                      :pointer val
+                                                      :pointer size
+                                                      :pointer (cffi:null-pointer)
+                                                      :size    0
+                                                      :int)
+                                (cffi:mem-ref val :int64))))
+        (values wire-pages internal-pages compressor-pages speculative-pages
+                external-pages purgeable-pages page-size total)))))
 
 (defun memory-total-bytes ()
   "Return total physical RAM in bytes."
   (handler-case
-      (multiple-value-bind (fp ps total) (%memory-stats)
-        (declare (ignore fp ps))
+      (multiple-value-bind (wp ip cp sp ep pp ps total) (%memory-stats)
+        (declare (ignore wp ip cp sp ep pp ps))
         total)
     (error () 0)))
 
 (defun memory-used-bytes ()
-  "Return used physical RAM in bytes (total − free pages × page size)."
+  "Return app-used RAM in bytes (Activity Monitor Memory Used − Cached Files):
+  (wire + internal + compressor-page-count + speculative − purgeable-count) × page_size."
   (handler-case
-      (multiple-value-bind (free-pages page-size total) (%memory-stats)
-        (- total (* free-pages page-size)))
+      (multiple-value-bind (wire internal compressor speculative external purgeable page-size total)
+          (%memory-stats)
+        (declare (ignore total external))
+        (* (- (+ wire internal compressor speculative) purgeable) page-size))
     (error () 0)))
 
 (defun memory-ratio ()
-  "Return memory pressure as a float in [0.0, 1.0] (used / total)."
+  "Return memory pressure as a float in [0.0, 1.0] (app-used / total).
+App-used = Activity Monitor Memory Used − Cached Files."
+
   (handler-case
-      (multiple-value-bind (free-pages page-size total) (%memory-stats)
-        (if (zerop total)
-            0.0
-            (min 1.0 (/ (float (- total (* free-pages page-size)))
-                        (float total)))))
+      (float
+       (/ (memory-used-bytes)
+          (memory-total-bytes)))
     (error () 0.0)))
 
 

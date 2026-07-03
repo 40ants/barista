@@ -1,4 +1,4 @@
-(defpackage #:barista/bar-icon
+(uiop:define-package #:barista/bar-icon
   (:use #:cl)
   (:import-from #:barista/classes
                 #:make-image-file)

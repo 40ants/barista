@@ -1,4 +1,4 @@
-(defpackage #:barista-plugins/system-monitor
+(uiop:define-package #:barista-plugins/system-monitor
   (:use #:cl)
   (:import-from #:barista/menu
                 #:build-menu
