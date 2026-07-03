@@ -23,6 +23,12 @@
     #:status-item
     #:make-attributed-string
     #:make-ns-image
+    #:make-image-file
+    #:image-file
+    #:image-file-p
+    #:image-file-path
+    #:image-file-pixel-width
+    #:image-file-pixel-height
     #:make-font
     #:make-default-font
     #:join-attributed-string
@@ -116,68 +122,106 @@
     (setf (%get-title item) value)))
 
 
+;;; ---- image-file -----------------------------------------------------------
+
+(defclass image-file ()
+  ((path :initarg :path :reader image-file-path
+         :documentation "Pathname of the PNG file on disk.")
+   (pixel-width :initarg :pixel-width :reader image-file-pixel-width
+                :documentation "Actual pixel width of the image data.")
+   (pixel-height :initarg :pixel-height :reader image-file-pixel-height
+                 :documentation "Actual pixel height of the image data."))
+  (:documentation "An image backed by an on-disk file, with known pixel dimensions.
+Used so that (setf get-image) can compute the correct logical (point) size
+from the screen backing scale factor, producing crisp Retina rendering."))
+
+(defun make-image-file (path pixel-width pixel-height)
+  "Create an IMAGE-FILE from PATH with the given PIXEL-WIDTH and PIXEL-HEIGHT."
+  (make-instance 'image-file
+                 :path path
+                 :pixel-width pixel-width
+                 :pixel-height pixel-height))
+
+(defun image-file-p (x)
+  "Return T when X is an IMAGE-FILE instance."
+  (typep x 'image-file))
+
+
 ;;; ---- NSImage helpers -----------------------------------------------------
 
-(defun make-ns-image (path &key (size nil) (template nil))
+(defun make-ns-image (path &key (size nil) (point-size nil) (template nil))
   "Load an NSImage from PATH (pathname or string).
-  PATH may be a CL pathname or a namestring.
+PATH may be a CL pathname or a namestring.
 
-  Keyword arguments:
-    SIZE     -- when non-NIL, a number; calls setSize: with SIZE x SIZE points.
-    TEMPLATE -- when T, marks the image as a template image so macOS adapts
+Keyword arguments:
+  SIZE       -- when non-NIL, a number; calls setSize: with SIZE x SIZE points.
+  POINT-SIZE -- when non-NIL, a cons (WIDTH . HEIGHT) in points.  The image
+                pixel data may be at a higher resolution (e.g. 2x for Retina);
+                setSize: is called so AppKit treats it as the given point size.
+  TEMPLATE   -- when T, marks the image as a template image so macOS adapts
                 it to the current appearance (dark/light mode).  Use T only
                 for monochrome/symbolic icons.  For colour images leave NIL
                 (the default) so pixels render as-is.
 
-  Returns the NSImage pointer, or NIL if the file could not be loaded."
+Returns the NSImage pointer, or NIL if the file could not be loaded."
   (let* ((path-str (if (pathnamep path) (namestring path) path))
          (image    (send (send (%cls "NSImage") "alloc" :pointer)
                          "initWithContentsOfFile:"
                          :pointer (ns-str path-str) :pointer)))
     (when (and image (not (cffi:null-pointer-p image)))
-      (when size
-        ;; NSSize is two doubles (width height); on arm64 passed as individual
-        ;; :double args in fp registers via objc_msgSend HFA calling convention.
-        (send image "setSize:"
-              :double (float size 1.0d0)
-              :double (float size 1.0d0)
-              :void))
+      (cond
+        (size
+         (send image "setSize:"
+               :double (float size 1.0d0)
+               :double (float size 1.0d0)
+               :void))
+        (point-size
+         (send image "setSize:"
+               :double (float (car point-size) 1.0d0)
+               :double (float (cdr point-size) 1.0d0)
+               :void)))
       (send image "setTemplate:" :bool (if template t nil) :void)
       image)))
+
+(defun backing-scale-factor ()
+  "Return the backing scale factor of the main screen (1.0, 2.0, or 3.0)."
+  (let ((screen (send (%cls "NSScreen") "mainScreen" :pointer)))
+    (if (cffi:null-pointer-p screen)
+        1.0d0
+        (send screen "backingScaleFactor" :double))))
 
 (defgeneric get-image (item)
   (:documentation "Return the current NSImage pointer set on ITEM, or NIL."))
 
 (defgeneric (setf get-image) (value item)
   (:documentation "Set an NSImage on ITEM's NSStatusItem.
-  VALUE may be:
-    - an NSImage CFFI pointer (from make-ns-image)
-    - a CL pathname or namestring  (loaded automatically, template=NIL)
-    - NIL to clear the image"))
+VALUE may be:
+  - an IMAGE-FILE instance — loaded with correct Retina point size
+  - an NSImage CFFI pointer (from make-ns-image)
+  - a CL pathname or namestring  (loaded automatically, template=NIL)
+  - NIL to clear the image"))
 
 (defmethod get-image ((item status-item))
-  ;; NSStatusItem has no getImage: that is easy to call; just return nil --
-  ;; callers that need the value should keep it themselves.
   nil)
 
 (defmethod (setf get-image) (value (item status-item))
   (call-on-main-thread
    (lambda ()
-     ;; Re-read the ns-item pointer here, on the main thread, at execution
-     ;; time (see (setf get-title) above for the rationale).  Capturing the
-     ;; pointer in the closure leads to use-after-free when the plugin is
-     ;; stopped between scheduling and execution.
      (let ((ns-item (get-ns-status-item item)))
        (when ns-item
          (let ((image (cond
-                        ;; already an NSImage pointer
+                         ((image-file-p value)
+                          (let ((scale (backing-scale-factor))
+                                (pw    (image-file-pixel-width value))
+                                (ph    (image-file-pixel-height value)))
+                           (make-ns-image (image-file-path value)
+                                          :point-size (cons (/ pw scale)
+                                                            (/ ph scale)))))
                         ((and (cffi:pointerp value)
                               (not (cffi:null-pointer-p value)))
                          value)
-                        ;; pathname or string -- load from file
                         ((or (pathnamep value) (stringp value))
                          (make-ns-image value))
-                        ;; NIL -- clear
                         ((null value) (cffi:null-pointer))
                         (t (error "Unsupported image value: ~S" value)))))
            (send ns-item "setImage:" :pointer image :void))))))

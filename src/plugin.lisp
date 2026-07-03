@@ -89,8 +89,8 @@
 
 (defmethod (setf get-image) (value (plugin base-plugin))
   "Set the status-bar icon for PLUGIN from VALUE.
-  VALUE may be a CL pathname, a namestring, or an NSImage CFFI pointer
-  (e.g. from make-ns-image).  Dispatched on the main thread automatically."
+VALUE may be an IMAGE-FILE, a CL pathname, a namestring, or an NSImage CFFI
+pointer.  Dispatched on the main thread automatically."
   (setf (barista/classes:get-image (get-status-item plugin))
         value))
 

@@ -9,3 +9,4 @@
 /docs/build/
 /other-libs/
 /local-plugins/
+*.fasl
