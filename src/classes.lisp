@@ -92,10 +92,17 @@
 
 (defgeneric (setf get-title) (value item)
   (:method (value (item status-item))
-    (let ((ns-item (get-ns-status-item item)))
-      (when ns-item
-        (call-on-main-thread
-         (lambda ()
+    (call-on-main-thread
+     (lambda ()
+       ;; Re-read the ns-item pointer here, on the main thread, at execution
+       ;; time.  We must NOT capture it in the closure: a worker thread may
+       ;; schedule this lambda and, before the main thread runs it, the plugin
+       ;; can be stopped by hide (which releases the NSStatusItem and sets the
+       ;; slot to NIL).  Re-reading the now-NIL slot lets us skip the send and
+       ;; avoid a use-after-free that would otherwise corrupt another plugin's
+       ;; icon when the allocator reuses the freed pointer's address.
+       (let ((ns-item (get-ns-status-item item)))
+         (when ns-item
            (cond
              ;; NSAttributedString pointer -- use setAttributedTitle:
              ((and (cffi:pointerp value)
@@ -154,10 +161,14 @@
   nil)
 
 (defmethod (setf get-image) (value (item status-item))
-  (let ((ns-item (get-ns-status-item item)))
-    (when ns-item
-      (call-on-main-thread
-       (lambda ()
+  (call-on-main-thread
+   (lambda ()
+     ;; Re-read the ns-item pointer here, on the main thread, at execution
+     ;; time (see (setf get-title) above for the rationale).  Capturing the
+     ;; pointer in the closure leads to use-after-free when the plugin is
+     ;; stopped between scheduling and execution.
+     (let ((ns-item (get-ns-status-item item)))
+       (when ns-item
          (let ((image (cond
                         ;; already an NSImage pointer
                         ((and (cffi:pointerp value)
@@ -169,8 +180,8 @@
                         ;; NIL -- clear
                         ((null value) (cffi:null-pointer))
                         (t (error "Unsupported image value: ~S" value)))))
-           (send ns-item "setImage:" :pointer image :void)))))
-    value))
+           (send ns-item "setImage:" :pointer image :void))))))
+  value)
 
 
 ;;; ---- NSColor helpers -----------------------------------------------------
